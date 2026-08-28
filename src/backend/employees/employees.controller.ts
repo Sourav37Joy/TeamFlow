@@ -172,11 +172,25 @@ export class EmployeesController {
   async remove(@Param('id') id: string, @Query('confirm') confirm?: string) {
     const employeeId = requireObjectId('id', id);
     const employee = await this.find(employeeId);
-    const held = await this.prisma.assignment.findMany({ where: { employeeId } });
+    const [held, led] = await Promise.all([
+      this.prisma.assignment.findMany({ where: { employeeId } }),
+      this.prisma.project.findMany({
+        where: { leadEmployeeId: employeeId },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+    ]);
 
-    if (held.length > 0 && confirm !== 'true') {
+    // Leading a project is not an assignment, so it has to be named separately or a lead with
+    // no allocation would be deleted with no warning at all (FR-144). The led projects are
+    // named in the message rather than added to wouldRemove, which carries assignments only.
+    if ((held.length > 0 || led.length > 0) && confirm !== 'true') {
       throw new ConfirmationRequired(
-        `${employee.name} holds ${held.length} assignment${held.length === 1 ? '' : 's'}, which deleting the employee removes. Resend with confirm=true to proceed.`,
+        deletionConsequence(
+          employee.name,
+          held.length,
+          led.map((project) => project.name),
+        ),
         await assignmentRows(this.prisma, held),
       );
     }
@@ -187,7 +201,7 @@ export class EmployeesController {
       held.map((assignment) => assignment.id),
     );
 
-    return { deleted: true, removedAssignments: held.length };
+    return { deleted: true, removedAssignments: held.length, clearedLeadOn: led.length };
   }
 
   private async find(employeeId: string): Promise<Employee> {
@@ -247,6 +261,30 @@ function standingOf(
 ): 'ACTIVE' | 'EXPIRED' | 'FUTURE' {
   if (contributing.has(row.id)) return 'ACTIVE';
   return row.endDate < onDate ? 'EXPIRED' : 'FUTURE';
+}
+
+// Two consequences read as one sentence: the assignments that go with the person, and the
+// projects left without a lead. Either can be absent, and the sentence stays grammatical
+// whichever is (FR-013, FR-144).
+function deletionConsequence(name: string, assignments: number, ledProjects: string[]): string {
+  const clauses: string[] = [];
+
+  if (assignments > 0) {
+    const plural = assignments === 1 ? '' : 's';
+    clauses.push(`holds ${assignments} assignment${plural}, which deleting the employee removes`);
+  }
+
+  if (ledProjects.length > 0) {
+    const plural = ledProjects.length === 1 ? '' : 's';
+    const verb = ledProjects.length === 1 ? 'is' : 'are';
+    clauses.push(
+      `leads ${ledProjects.length} project${plural} (${ledProjects.join(', ')}), which ${verb} left with no lead`,
+    );
+  }
+
+  // The comma matters: without it the conjunction reads as part of the preceding relative
+  // clause - "which deleting the employee removes and leads 1 project".
+  return `${name} ${clauses.join(', and ')}. Resend with confirm=true to proceed.`;
 }
 
 function requireLoadLabel(value: string): LoadLabel {

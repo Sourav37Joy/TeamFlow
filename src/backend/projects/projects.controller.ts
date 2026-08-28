@@ -9,6 +9,7 @@ import { ConfirmationRequired, NotFound, RuleViolation, ValidationFailed } from 
 import { nameContains, nameSchema, objectIdSchema, requireObjectId } from '../common/fields';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { PrismaService } from '../prisma.service';
+import { checkLead, leadInputSchema, resolveLeads } from './lead';
 import { requirementRows } from './requirement-row';
 import { staffingViews } from './staffing-view';
 
@@ -28,13 +29,18 @@ export const requirementInputSchema = z.object({
 const createProjectSchema = z.object({
   name: nameSchema('a name'),
   status: statusSchema,
+  leadEmployeeId: leadInputSchema.optional(),
   requirements: z.array(requirementInputSchema).default([]),
 });
 
 const updateProjectSchema = z
-  .object({ name: nameSchema('a name').optional(), status: statusSchema.optional() })
+  .object({
+    name: nameSchema('a name').optional(),
+    status: statusSchema.optional(),
+    leadEmployeeId: leadInputSchema.optional(),
+  })
   .refine((body) => Object.keys(body).length > 0, {
-    message: 'at least one of name or status',
+    message: 'at least one of name, status, or leadEmployeeId',
   });
 
 @Controller('api/projects')
@@ -65,7 +71,10 @@ export class ProjectsController {
 
     const wanted = staffingStatus ? requireStaffingStatus(staffingStatus) : undefined;
     const projects = await this.prisma.project.findMany({ where, orderBy: { name: 'asc' } });
-    const staffing = await staffingViews(this.prisma, projects, onDate);
+    const [staffing, leads] = await Promise.all([
+      staffingViews(this.prisma, projects, onDate),
+      resolveLeads(this.prisma, projects),
+    ]);
     const byProject = new Map(staffing.map((view) => [view.projectId, view]));
 
     const rows = projects
@@ -75,6 +84,7 @@ export class ProjectsController {
           id: project.id,
           name: project.name,
           status: project.status,
+          lead: leads.get(project.id) ?? null,
           staffingStatus: view?.staffingStatus ?? 'NO_REQUIREMENTS_DECLARED',
           totalShortfall: view?.totalShortfall ?? 0,
           producesGaps: view?.producesGaps ?? false,
@@ -91,19 +101,21 @@ export class ProjectsController {
     const onDate = resolveAsOf(asOf);
     const project = await this.find(projectId);
 
-    const [requirements, assignments, staffing] = await Promise.all([
+    const [requirements, assignments, staffing, leads] = await Promise.all([
       this.prisma.roleRequirement.findMany({ where: { projectId } }),
       this.prisma.assignment.findMany({
         where: { projectId },
         orderBy: [{ startDate: 'asc' }, { endDate: 'asc' }],
       }),
       staffingViews(this.prisma, [project], onDate),
+      resolveLeads(this.prisma, [project]),
     ]);
 
     return {
       id: project.id,
       name: project.name,
       status: project.status,
+      lead: leads.get(project.id) ?? null,
       asOf: onDate,
       staffing: staffing[0],
       requirements: await requirementRows(this.prisma, requirements),
@@ -116,10 +128,15 @@ export class ProjectsController {
     @Body(new ZodValidationPipe(createProjectSchema)) input: z.infer<typeof createProjectSchema>,
   ) {
     await checkRequirements(this.prisma, input.requirements);
+    await checkLead(this.prisma, input.leadEmployeeId);
 
     const project = await this.prisma.$transaction(async (tx) => {
       const created = await tx.project.create({
-        data: { name: input.name, status: input.status },
+        data: {
+          name: input.name,
+          status: input.status,
+          leadEmployeeId: input.leadEmployeeId ?? null,
+        },
       });
       if (input.requirements.length > 0) {
         await tx.roleRequirement.createMany({
@@ -142,6 +159,7 @@ export class ProjectsController {
   ) {
     const projectId = requireObjectId('id', id);
     await this.find(projectId);
+    await checkLead(this.prisma, input.leadEmployeeId);
     await this.prisma.project.update({ where: { id: projectId }, data: input });
     return this.read(projectId);
   }

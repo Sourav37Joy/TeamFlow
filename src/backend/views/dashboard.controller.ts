@@ -1,8 +1,39 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { utilizationForAll } from '../calc/utilization';
+import { Assignment, ProjectStatus } from '@prisma/client';
+import { CalendarDate } from '../calc/dates';
+import { activeHeadcount, utilizationForAll } from '../calc/utilization';
 import { resolveAsOf } from '../common/as-of';
 import { PrismaService } from '../prisma.service';
-import { staffingViews } from '../projects/staffing-view';
+import { resolveLeads } from '../projects/lead';
+import { FillerRow, ProjectStaffingRow, staffingViews } from '../projects/staffing-view';
+
+// Columns are drawn for every status, in lifecycle order, whether or not they hold anything
+// (FR-120, FR-123).
+const COLUMN_ORDER: ProjectStatus[] = [
+  ProjectStatus.PLANNED,
+  ProjectStatus.ACTIVE,
+  ProjectStatus.ON_HOLD,
+  ProjectStatus.COMPLETED,
+  ProjectStatus.CANCELLED,
+];
+
+const AVATARS_PER_CARD = 4;
+
+// One person filling two roles on a project is one person on the card, so the portraits are
+// deduplicated before they are capped (FR-135).
+function peopleOn(view: ProjectStaffingRow): FillerRow[] {
+  const fillers = [
+    ...view.requirements.flatMap((requirement) => requirement.fillers),
+    ...view.unrequestedRoles.flatMap((unrequested) => unrequested.fillers),
+  ];
+
+  const seen = new Map<string, FillerRow>();
+  for (const filler of fillers) {
+    if (!seen.has(filler.employeeId)) seen.set(filler.employeeId, filler);
+  }
+
+  return [...seen.values()].sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+}
 
 @Controller('api/dashboard')
 export class DashboardController {
@@ -99,9 +130,76 @@ export class DashboardController {
 
     return {
       asOf: onDate,
+      board: await this.board(projects, assignments, staffing, onDate),
       overallocated: { entries: overallocated, reason: nothing(overallocated) },
       available: { entries: available, reason: nothing(available) },
       gaps: { entries: gaps, reason: nothing(gaps) },
+    };
+  }
+
+  // The board reuses the staffing already computed above for every project, so it costs no
+  // extra staffing query - only the small fetch of the employees named as leads (D-04, D-06).
+  private async board(
+    projects: Array<{
+      id: string;
+      name: string;
+      status: ProjectStatus;
+      leadEmployeeId: string | null;
+    }>,
+    assignments: Assignment[],
+    staffing: ProjectStaffingRow[],
+    onDate: CalendarDate,
+  ) {
+    const leads = await resolveLeads(this.prisma, projects);
+    const byProject = new Map(staffing.map((view) => [view.projectId, view]));
+
+    const byProjectAssignments = new Map<string, Assignment[]>();
+    for (const assignment of assignments) {
+      const held = byProjectAssignments.get(assignment.projectId);
+      if (held) held.push(assignment);
+      else byProjectAssignments.set(assignment.projectId, [assignment]);
+    }
+
+    const cards = projects
+      .map((project) => {
+        const view = byProject.get(project.id);
+        const people = view ? peopleOn(view) : [];
+
+        return {
+          projectId: project.id,
+          projectName: project.name,
+          status: project.status,
+          lead: leads.get(project.id) ?? null,
+          // The shared distinct-person count, so a card and a project page cannot disagree
+          // (FR-131, FR-137).
+          headcount: activeHeadcount(byProjectAssignments.get(project.id) ?? [], onDate),
+          staffingStatus: view?.staffingStatus ?? 'NO_REQUIREMENTS_DECLARED',
+          totalShortfall: view?.totalShortfall ?? 0,
+          shortRoles: (view?.requirements ?? [])
+            .filter((requirement) => requirement.shortfall > 0)
+            .map((requirement) => ({
+              requirementId: requirement.requirementId,
+              roleName: requirement.roleName,
+              requiredHeadcount: requirement.requiredHeadcount,
+              filledHeadcount: requirement.filledHeadcount,
+              shortfall: requirement.shortfall,
+            })),
+          people: people.slice(0, AVATARS_PER_CARD).map((filler) => ({
+            employeeId: filler.employeeId,
+            name: filler.employeeName,
+            avatarUrl: filler.employeeAvatarUrl,
+          })),
+          peopleBeyond: Math.max(0, people.length - AVATARS_PER_CARD),
+        };
+      })
+      .sort((a, b) => a.projectName.localeCompare(b.projectName));
+
+    return {
+      columns: COLUMN_ORDER.map((status) => {
+        const inColumn = cards.filter((card) => card.status === status);
+        return { status, count: inColumn.length, projects: inColumn };
+      }),
+      totalProjects: cards.length,
     };
   }
 }

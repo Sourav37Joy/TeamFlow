@@ -1,6 +1,7 @@
 'use client';
 
 import { AssignmentRow } from '../lib/api';
+import { useDialogFocus } from '../lib/use-dialog-focus';
 import Avatar from './Avatar';
 
 interface Props {
@@ -22,9 +23,11 @@ export default function ConfirmDeleteDialog({
   onProceed,
   onCancel,
 }: Props) {
+  const dialog = useDialogFocus<HTMLDivElement>();
+
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="dialog">
+      <div className="dialog" ref={dialog} tabIndex={-1}>
         <h3>{title}</h3>
         <p>{message}</p>
         {wouldRemove.length > 0 ? (

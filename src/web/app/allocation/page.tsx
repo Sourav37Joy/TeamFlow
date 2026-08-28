@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import PageSkeleton from '../../components/PageSkeleton';
 import Avatar from '../../components/Avatar';
 import EmptyState from '../../components/EmptyState';
 import LoadLabel from '../../components/LoadLabel';
@@ -53,7 +54,7 @@ export default function AllocationPage() {
     if (user) void load();
   }, [user, load]);
 
-  if (loading) return <p className="muted">Loading the allocation overview...</p>;
+  if (loading) return <PageSkeleton label="Loading the allocation overview" rows={8} />;
   if (!user) return null;
 
   const filtered = q !== '' || skillId !== '' || roleId !== '';

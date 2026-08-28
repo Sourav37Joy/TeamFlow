@@ -1,9 +1,11 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import CatalogueAdd from '../../components/CatalogueAdd';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
+import LeadLine from '../../components/LeadLine';
+import PageSkeleton from '../../components/PageSkeleton';
 import {
   addRequirement,
   ApiFailure,
@@ -111,7 +113,7 @@ export default function ProjectsPage() {
     }
   }
 
-  if (loading) return <p className="muted">Loading projects...</p>;
+  if (loading) return <PageSkeleton label="Loading projects" rows={8} />;
   if (!user) return null;
 
   return (
@@ -197,6 +199,7 @@ export default function ProjectsPage() {
           <tr>
             <th>Name</th>
             <th>Status</th>
+            <th>Lead</th>
             <th>Staffing</th>
             <th />
           </tr>
@@ -204,7 +207,7 @@ export default function ProjectsPage() {
         <tbody>
           {projects.length === 0 ? (
             <tr>
-              <td colSpan={4} className="muted">
+              <td colSpan={5} className="muted">
                 No projects match this search.
               </td>
             </tr>
@@ -220,6 +223,9 @@ export default function ProjectsPage() {
                 <span className={`status status-${project.status.toLowerCase()}`}>
                   {PROJECT_STATUS_TEXT[project.status]}
                 </span>
+              </td>
+              <td>
+                <LeadLine lead={project.lead} size={24} />
               </td>
               <td>
                 {STAFFING_STATUS_TEXT[project.staffingStatus]}

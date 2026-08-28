@@ -1,6 +1,7 @@
 'use client';
 
 import { Warning } from '../lib/api';
+import { useDialogFocus } from '../lib/use-dialog-focus';
 
 interface Props {
   title: string;
@@ -14,9 +15,11 @@ interface Props {
 // real state of the world a manager must be able to record, so nothing here refuses the save -
 // it only makes sure the consequence was seen first (FR-021, Constitution VIII).
 export default function WarningDialog({ title, warnings, busy, onProceed, onCancel }: Props) {
+  const dialog = useDialogFocus<HTMLDivElement>();
+
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="dialog">
+      <div className="dialog" ref={dialog} tabIndex={-1}>
         <h3>{title}</h3>
         <ul className="warnings">
           {warnings.map((warning) => (

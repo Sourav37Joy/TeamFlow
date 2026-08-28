@@ -224,10 +224,19 @@ export const removeEmployeeSkill = (id: string, skillId: string) =>
 
 /* Projects */
 
+// Null means no lead is set, which is a state the interface states plainly rather than
+// leaving blank (FR-140).
+export interface ProjectLead {
+  employeeId: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
 export interface ProjectRow {
   id: string;
   name: string;
   status: ProjectStatus;
+  lead: ProjectLead | null;
   staffingStatus: StaffingStatus;
   totalShortfall: number;
   producesGaps: boolean;
@@ -285,6 +294,7 @@ export interface ProjectDetail {
   id: string;
   name: string;
   status: ProjectStatus;
+  lead: ProjectLead | null;
   asOf: string;
   staffing: ProjectStaffing;
   requirements: RequirementRow[];
@@ -307,11 +317,14 @@ export const readProject = (id: string, asOf?: string) =>
 export const createProject = (body: {
   name: string;
   status: ProjectStatus;
+  leadEmployeeId?: string | null;
   requirements?: RequirementInput[];
 }) => send<ProjectDetail>('/projects', 'POST', body);
 
-export const updateProject = (id: string, body: { name?: string; status?: ProjectStatus }) =>
-  send<ProjectDetail>(`/projects/${id}`, 'PATCH', body);
+export const updateProject = (
+  id: string,
+  body: { name?: string; status?: ProjectStatus; leadEmployeeId?: string | null },
+) => send<ProjectDetail>(`/projects/${id}`, 'PATCH', body);
 
 export const deleteProject = (id: string, confirm = false) =>
   send<{ deleted: boolean; removedAssignments: number }>(
@@ -543,8 +556,45 @@ export interface GapEntry {
   }>;
 }
 
+export interface BoardPerson {
+  employeeId: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
+export interface ProjectCardRow {
+  projectId: string;
+  projectName: string;
+  status: ProjectStatus;
+  lead: ProjectLead | null;
+  headcount: number;
+  staffingStatus: StaffingStatus;
+  totalShortfall: number;
+  shortRoles: Array<{
+    requirementId: string;
+    roleName: string;
+    requiredHeadcount: number;
+    filledHeadcount: number;
+    shortfall: number;
+  }>;
+  people: BoardPerson[];
+  peopleBeyond: number;
+}
+
+export interface BoardColumn {
+  status: ProjectStatus;
+  count: number;
+  projects: ProjectCardRow[];
+}
+
+export interface Board {
+  columns: BoardColumn[];
+  totalProjects: number;
+}
+
 export interface Dashboard {
   asOf: string;
+  board: Board;
   overallocated: { entries: OverallocatedEntry[]; reason: string | null };
   available: { entries: AvailableEntry[]; reason: string | null };
   gaps: { entries: GapEntry[]; reason: string | null };

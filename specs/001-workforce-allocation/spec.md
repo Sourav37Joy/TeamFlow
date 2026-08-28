@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-28
 
-**Last Updated**: 2026-08-28 (revision 4 - project status vocabulary, authentication with two roles, managed skill and role catalogues, what-if scenarios deferred)
+**Last Updated**: 2026-08-29 (revision 5 - forward pointer to feature 002 added on the dashboard requirements; no requirement changed or withdrawn)
 
 **Status**: Draft
 
@@ -318,6 +318,8 @@ The project manager lands on a single dashboard that answers the three standing 
 - **FR-071**: Project managers MUST be able to edit and remove individual draft changes within an open scenario.
 
 #### Dashboard
+
+> **Superseded in presentation by [002-brand-theme-jira-dashboard](../002-brand-theme-jira-dashboard/spec.md).** FR-072 to FR-077 remain in force and are still required; feature 002 re-presents them as a companion rail beside a project board and withdraws none of them. Read this section together with FR-147 and FR-148 there.
 
 - **FR-072**: The system MUST provide a single dashboard presenting three panels: overallocated employees, employees with spare capacity, and projects with open role gaps.
 - **FR-073**: The overallocated panel MUST list each affected employee with their utilization percentage, ordered most overloaded first.

@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import PageSkeleton from '../../components/PageSkeleton';
 import AssignmentForm from '../../components/AssignmentForm';
 import CatalogueAdd from '../../components/CatalogueAdd';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
@@ -106,7 +107,7 @@ export default function EmployeesPage() {
     }
   }
 
-  if (loading) return <p className="muted">Loading people...</p>;
+  if (loading) return <PageSkeleton label="Loading people" rows={10} />;
   if (!user) return null;
 
   return (

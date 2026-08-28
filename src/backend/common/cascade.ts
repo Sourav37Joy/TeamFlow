@@ -35,6 +35,12 @@ export function deleteEmployeeWithAssignments(
   return prisma.$transaction(async (tx) => {
     await detachAssignments(tx, assignmentIds);
     await tx.assignment.deleteMany({ where: { employeeId } });
+    // A project must never name somebody who no longer exists, so the lead is cleared inside
+    // the same transaction rather than guarded at read time (FR-144).
+    await tx.project.updateMany({
+      where: { leadEmployeeId: employeeId },
+      data: { leadEmployeeId: null },
+    });
     await tx.employee.delete({ where: { id: employeeId } });
   });
 }

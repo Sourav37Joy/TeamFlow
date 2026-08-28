@@ -1,0 +1,193 @@
+﻿/*
+ * The single definition of every brand value (FR-102).
+ *
+ * Tier 1 is transcribed from specs/002-brand-theme-jira-dashboard/design-tokens.md, which
+ * records where each value was found on niftycoders.com and how often. Tiers 2 and 3 name
+ * jobs rather than colours. Nothing outside this file may contain a colour literal.
+ *
+ * Contrast: every text-on-background pair below was measured against WCAG 2.1. Where a brand
+ * value could not carry small text, a darker step from the same family is defined alongside it
+ * and the measurement is recorded (FR-113, FR-114).
+ */
+
+:root {
+  /* ---------------------------------------------------------------------
+   * Tier 1 - raw brand values. Change these only when the brand changes.
+   * ------------------------------------------------------------------- */
+
+  --brand-ink: #141f40;
+  --brand-accent: #0145fe;
+  --brand-accent-pressed: #003ee5;
+  --brand-surface: #f0f5f9;
+  --brand-panel: #ffffff;
+  --brand-hairline: #e2e9ef;
+  --brand-muted: #bebebe;
+  --brand-near-black: #000003;
+
+  --brand-gradient-blue: #0c65f1;
+  --brand-navy-deep: #091f5b;
+  --brand-teal-deep: #052b42;
+  --brand-cyan: #44e6fe;
+  --brand-cyan-soft: #26e0fc;
+
+  --brand-success: #2aae49;
+  --brand-danger: #e30707;
+
+  --brand-tint-periwinkle: #ccdafc;
+  --brand-tint-ice: #def9ff;
+  --brand-tint-sky: #d8f5fe;
+  --brand-tint-cornflower: #c2d7ff;
+  --brand-tint-steel: #b1c9f8;
+  --brand-tint-mist: #eff5ff;
+
+  --brand-neutral-700: #373a47;
+  --brand-neutral-600: #666666;
+  --brand-neutral-400: #a6a6a6;
+  --brand-neutral-300: #d9d9d9;
+  --brand-neutral-250: #d9e1e8;
+  --brand-neutral-200: #eaebec;
+  --brand-neutral-100: #f2f2f2;
+
+  /* Derived, because the brand publishes neither an amber nor contrast-safe text steps.
+   * Each derivation and its measurement is recorded here so it can be checked or replaced.
+   *
+   * --warning-base: hue midway between --brand-danger (H 0) and --brand-success (H 134) along
+   *   the warm arc, carrying the mean saturation (78%) and a lightness lowered to 36% so it
+   *   clears 4.5:1. Derived from brand values rather than imported (FR-118).
+   *
+   * Measured on --brand-panel:  ink 16.16 | accent 6.40 | accent-pressed 7.45 | danger 4.88
+   *                             muted 1.86 FAILS | success 2.90 FAILS
+   * Substitutions below carry small text; the raw values above remain for fills and large text.
+   */
+  --warning-base: #a36115; /* 4.91 on panel */
+  --ink-muted: #666666; /* 5.74 on panel, 5.23 on surface - replaces --brand-muted for text */
+  --success-strong: #1d7a33; /* 5.41 on panel, 5.01 on its tint */
+  --warning-strong: #8b5212; /* 6.34 on panel, 5.71 on its tint */
+  --danger-strong: #c10606; /* 6.37 on panel, 5.54 on its tint */
+
+  --tint-success: #eef9f0;
+  --tint-warning: #f8f2ec;
+  --tint-danger: #fdebeb;
+  --tint-neutral: #f0f0f0;
+
+  --edge-success: #c3e8cc;
+  --edge-warning: #e5d3bd;
+  --edge-danger: #f7baba;
+  --edge-neutral: #d4d4d4;
+
+  /* ---------------------------------------------------------------------
+   * Tier 2 - semantic aliases. Everything outside this file uses these.
+   * ------------------------------------------------------------------- */
+
+  --text-primary: var(--brand-ink);
+  --text-muted: var(--ink-muted);
+  --text-on-accent: var(--brand-panel);
+  --text-link: var(--brand-accent);
+  --text-link-pressed: var(--brand-accent-pressed);
+
+  --surface: var(--brand-surface);
+  --surface-raised: var(--brand-panel);
+  --surface-sunken: var(--brand-neutral-100);
+  --surface-hover: #f6f6f7;
+  --surface-selected: var(--brand-tint-mist);
+
+  --border: var(--brand-hairline);
+  --border-strong: var(--brand-neutral-250);
+  --border-hover: var(--brand-tint-steel);
+  --border-disabled: var(--brand-muted);
+
+  --avatar-initials-bg: var(--brand-tint-mist);
+  --avatar-initials-fg: var(--brand-ink);
+
+  --accent: var(--brand-accent);
+  --accent-pressed: var(--brand-accent-pressed);
+
+  --success: var(--success-strong);
+  --warning: var(--warning-strong);
+  --danger: var(--danger-strong);
+  --danger-fill: var(--brand-danger);
+
+  --skeleton-base: #efeff2;
+  --skeleton-shine: #f8f8f9;
+
+  /* Brand ink at 45% - the scrim behind a dialog. */
+  --overlay-scrim: rgba(20, 31, 64, 0.45);
+
+  /* ---------------------------------------------------------------------
+   * Tier 3 - metrics, elevation, motion, and component roles.
+   * ------------------------------------------------------------------- */
+
+  --radius-card: 20px;
+  --radius-large: 30px;
+  --radius-control: 15px;
+  --radius-pill: 48px;
+  --radius-circle: 50%;
+
+  /* Zero offset and a wide, very light blur: a diffuse halo, not a drop shadow. */
+  --shadow-ambient: 0 0 50px 0 rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 4px 25px 0 rgba(24, 26, 30, 0.4);
+  /* Brand ink at half alpha - the site's own focus treatment. */
+  --focus-ring: 0 0 0 3px rgba(20, 31, 64, 0.5);
+
+  --motion-fast: 0.3s ease;
+  --motion-duration: 0.3s;
+  --motion-ease: ease;
+
+  --font-body: var(--font-inter), 'Segoe UI', system-ui, sans-serif;
+  --font-display: var(--font-plexsans), var(--font-inter), 'Segoe UI', system-ui, sans-serif;
+
+  /* Sampled from the middle of a wider ramp - the out-of-range stops are what stop it reading
+   * as a flat two-colour blend, so they are reproduced exactly (FR-119). */
+  --gradient-page: linear-gradient(180deg, #fff 0%, #f0f5f9 100%);
+  --gradient-bold: linear-gradient(270deg, #0c65f1 -2.84%, #000003 111.23%);
+  --gradient-soft-a: linear-gradient(270deg, #ccdafc 0%, #def9ff 100%);
+  --gradient-soft-b: linear-gradient(270deg, #d8f5fe 0%, #c2d7ff 100%);
+  --gradient-soft-c: linear-gradient(270deg, #eff5ff 0%, #b1c9f8 100%);
+
+  /* Project status. Each pair measured; the label text carries the meaning so status never
+   * depends on colour alone (FR-115). */
+  --status-planned-bg: var(--brand-tint-mist);
+  --status-planned-fg: var(--brand-ink); /* 14.75 */
+  --status-planned-edge: var(--brand-tint-cornflower);
+
+  --status-active-bg: var(--brand-tint-periwinkle);
+  --status-active-fg: var(--brand-accent-pressed); /* 5.32 */
+  --status-active-edge: var(--brand-tint-steel);
+
+  --status-on-hold-bg: var(--tint-warning);
+  --status-on-hold-fg: var(--warning-strong); /* 5.71 */
+  --status-on-hold-edge: var(--edge-warning);
+
+  --status-completed-bg: var(--tint-success);
+  --status-completed-fg: var(--success-strong); /* 5.01 */
+  --status-completed-edge: var(--edge-success);
+
+  --status-cancelled-bg: var(--tint-neutral);
+  --status-cancelled-fg: var(--ink-muted); /* 5.04 */
+  --status-cancelled-edge: var(--edge-neutral);
+
+  /* Employee load, ordered unassigned - available - balanced - high load - overallocated. */
+  --load-unassigned-bg: var(--tint-neutral);
+  --load-unassigned-fg: var(--ink-muted);
+  --load-unassigned-edge: var(--edge-neutral);
+
+  --load-available-bg: var(--tint-success);
+  --load-available-fg: var(--success-strong);
+  --load-available-edge: var(--edge-success);
+
+  --load-balanced-bg: var(--brand-tint-periwinkle);
+  --load-balanced-fg: var(--brand-accent-pressed);
+  --load-balanced-edge: var(--brand-tint-steel);
+
+  --load-high-bg: var(--tint-warning);
+  --load-high-fg: var(--warning-strong);
+  --load-high-edge: var(--edge-warning);
+
+  --load-over-bg: var(--tint-danger);
+  --load-over-fg: var(--danger-strong);
+  --load-over-edge: var(--edge-danger);
+
+  /* Board metrics. Columns are sized by the grid's auto-fit, not by a fixed width. */
+  --board-gap: 16px;
+  --card-gap: 12px;
+}

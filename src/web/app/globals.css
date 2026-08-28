@@ -1,27 +1,58 @@
-:root {
-  --bg: #f7f8fa;
-  --panel: #ffffff;
-  --ink: #16191d;
-  --muted: #5b6470;
-  --line: #dfe3e8;
-  --accent: #2b5fd9;
-  --warn: #b4530a;
-  --danger: #b3261e;
+﻿@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* No scrollbar is drawn anywhere (FR-164). Note this hides the indicator only - it never sets
+ * overflow: hidden, which would remove the ability to scroll and cut off whatever sat past the
+ * fold. Wheel, trackpad, touch, and keyboard scrolling all still work (FR-166).
+ * With nothing drawn there is also no gutter to reserve, so the sideways jolt FR-159 forbids
+ * cannot happen in the first place. */
 * {
-  box-sizing: border-box;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 a {
-  color: var(--accent);
+  color: var(--text-link);
+  transition: color var(--motion-fast);
+}
+
+a:hover {
+  color: var(--text-link-pressed);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-control);
 }
 
 .shell {
@@ -32,66 +63,96 @@ a {
 .nav {
   width: 220px;
   flex: 0 0 220px;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  padding: 20px 16px;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
 }
 
 .nav h1 {
-  font-size: 17px;
-  margin: 0 0 20px;
+  font-size: 19px;
+  margin: 0 0 22px;
+  color: var(--text-primary);
 }
 
 .nav a {
   display: block;
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border-radius: var(--radius-control);
   text-decoration: none;
-  color: var(--ink);
+  color: var(--text-primary);
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
 }
 
 .nav a:hover {
-  background: var(--bg);
+  background: var(--surface);
+  color: var(--text-link);
 }
 
 main {
   flex: 1;
   padding: 28px 32px;
-  max-width: 1200px;
+  max-width: 1400px;
+  min-width: 0;
 }
 
 .card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-ambient);
+  padding: 22px;
 }
 
 label {
   display: block;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
 input,
 select {
   width: 100%;
-  padding: 9px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font: inherit;
   margin-bottom: 14px;
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--border-strong);
 }
 
 button {
-  padding: 9px 16px;
+  padding: 9px 18px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font: inherit;
   cursor: pointer;
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    transform var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-pressed);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .error {
@@ -105,12 +166,13 @@ button {
 }
 
 .nav-links a.current {
-  background: var(--bg);
+  background: var(--surface-selected);
+  color: var(--text-link-pressed);
   font-weight: 600;
 }
 
 .nav-session {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   padding-top: 14px;
 }
 
@@ -136,7 +198,7 @@ button {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -159,9 +221,9 @@ button {
 table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   overflow: hidden;
   margin-bottom: 20px;
 }
@@ -170,21 +232,29 @@ th,
 td {
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
   vertical-align: middle;
 }
 
 th {
-  background: var(--bg);
+  background: var(--surface);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 tbody tr:last-child td {
   border-bottom: 0;
+}
+
+tbody tr {
+  transition: background-color var(--motion-fast);
+}
+
+tbody tr:hover {
+  background: var(--surface-hover);
 }
 
 td input,
@@ -201,18 +271,33 @@ td select {
 
 button.link {
   background: none;
-  color: var(--accent);
+  color: var(--text-link);
   padding: 0;
   text-decoration: underline;
+  border-radius: 4px;
+}
+
+button.link:hover:not(:disabled) {
+  background: none;
+  color: var(--text-link-pressed);
 }
 
 button.secondary {
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 button.danger {
+  background: var(--danger-fill);
+}
+
+button.danger:hover:not(:disabled) {
   background: var(--danger);
 }
 
@@ -227,39 +312,85 @@ button:disabled {
 
 .pill {
   display: inline-block;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 2px 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
   margin: 0 5px 4px 0;
   font-size: 12px;
 }
 
-.status {
+.status,
+.badge {
+  display: inline-block;
   font-size: 12px;
-  padding: 2px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-}
-
-.status-active {
-  background: #e7f1ff;
-  border-color: #b9d3ff;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+  font-weight: 500;
 }
 
 .status-planned {
-  background: #f1f0ff;
-  border-color: #cfcbf5;
+  background: var(--status-planned-bg);
+  border-color: var(--status-planned-edge);
+  color: var(--status-planned-fg);
+}
+
+.status-active {
+  background: var(--status-active-bg);
+  border-color: var(--status-active-edge);
+  color: var(--status-active-fg);
 }
 
 .status-on_hold {
-  background: #fff4e5;
-  border-color: #f2d3a7;
+  background: var(--status-on-hold-bg);
+  border-color: var(--status-on-hold-edge);
+  color: var(--status-on-hold-fg);
 }
 
-.status-completed,
+.status-completed {
+  background: var(--status-completed-bg);
+  border-color: var(--status-completed-edge);
+  color: var(--status-completed-fg);
+}
+
 .status-cancelled {
-  color: var(--muted);
+  background: var(--status-cancelled-bg);
+  border-color: var(--status-cancelled-edge);
+  color: var(--status-cancelled-fg);
+}
+
+.badge-unassigned {
+  background: var(--load-unassigned-bg);
+  border-color: var(--load-unassigned-edge);
+  color: var(--load-unassigned-fg);
+}
+
+.badge-available {
+  background: var(--load-available-bg);
+  border-color: var(--load-available-edge);
+  color: var(--load-available-fg);
+}
+
+.badge-balanced {
+  background: var(--load-balanced-bg);
+  border-color: var(--load-balanced-edge);
+  color: var(--load-balanced-fg);
+}
+
+.badge-high_load {
+  background: var(--load-high-bg);
+  border-color: var(--load-high-edge);
+  color: var(--load-high-fg);
+}
+
+.badge-overallocated {
+  background: var(--load-over-bg);
+  border-color: var(--load-over-edge);
+  color: var(--load-over-fg);
+  font-weight: 600;
 }
 
 .card.form,
@@ -275,7 +406,7 @@ button:disabled {
 .card h4 {
   margin: 18px 0 10px;
   font-size: 14px;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -322,22 +453,45 @@ p.fixed {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(22, 25, 29, 0.45);
+  background: var(--overlay-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   z-index: 20;
+  animation: overlay-in var(--motion-duration) var(--motion-ease);
 }
 
 .dialog {
-  background: var(--panel);
-  border-radius: 12px;
-  padding: 22px;
+  background: var(--surface-raised);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elevated);
+  padding: 24px;
   max-width: 640px;
   width: 100%;
   max-height: 85vh;
   overflow: auto;
+  animation: dialog-in var(--motion-duration) var(--motion-ease);
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dialog h3 {
@@ -351,8 +505,9 @@ p.fixed {
 }
 
 .warnings li {
-  border-left: 3px solid var(--warn);
-  background: #fff8f0;
+  border-left: 3px solid var(--warning);
+  background: var(--tint-warning);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
   padding: 10px 12px;
   margin-bottom: 10px;
 }
@@ -363,7 +518,7 @@ p.fixed {
 
 .warnings .figure {
   margin-top: 6px;
-  color: var(--warn);
+  color: var(--warning);
   font-size: 14px;
 }
 
@@ -393,43 +548,6 @@ p.fixed {
   margin-bottom: 0;
 }
 
-.badge {
-  display: inline-block;
-  font-size: 12px;
-  padding: 2px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  white-space: nowrap;
-}
-
-.badge-unassigned {
-  color: var(--muted);
-}
-
-.badge-available {
-  background: #eaf6ec;
-  border-color: #bfe0c6;
-}
-
-.badge-balanced {
-  background: #e7f1ff;
-  border-color: #b9d3ff;
-}
-
-.badge-high_load {
-  background: #fff4e5;
-  border-color: #f2d3a7;
-  color: var(--warn);
-}
-
-.badge-overallocated {
-  background: #fdeceb;
-  border-color: #f3c2bf;
-  color: var(--danger);
-  font-weight: 600;
-}
-
 .figures {
   display: flex;
   gap: 32px;
@@ -443,16 +561,17 @@ p.fixed {
 }
 
 .figure-value {
+  font-family: var(--font-display);
   font-size: 26px;
   font-weight: 600;
 }
 
 .empty {
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-control);
   padding: 16px;
   margin-bottom: 16px;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .empty-title {
@@ -465,8 +584,9 @@ p.fixed {
 }
 
 .notice {
-  border-left: 3px solid var(--warn);
-  background: #fff8f0;
+  border-left: 3px solid var(--warning);
+  background: var(--tint-warning);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
   padding: 10px 12px;
   margin-bottom: 18px;
   font-size: 14px;
@@ -488,12 +608,13 @@ p.fixed {
 }
 
 .panel-inset {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   margin-top: 16px;
   padding-top: 12px;
 }
 
 .score {
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 16px;
 }
@@ -515,22 +636,23 @@ p.fixed {
 }
 
 .avatar {
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   object-fit: cover;
   flex: 0 0 auto;
-  background: var(--bg);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
   letter-spacing: 0.02em;
   vertical-align: middle;
 }
 
 .avatar-initials {
-  background: #e9edf4;
+  background: var(--avatar-initials-bg);
+  color: var(--avatar-initials-fg);
 }
 
 .person {
@@ -574,10 +696,359 @@ p.fixed {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   padding: 2px 10px 2px 3px;
   margin: 0 6px 4px 0;
   font-size: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dashboard: the project board and the people rail beside it.
+ * ------------------------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: 10px 18px;
+  background: none;
+  border: 0;
+  /* Selection is carried by the underline as well as the colour, so it survives greyscale
+   * and does not rest on colour alone (FR-151). */
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  color: var(--text-muted);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast),
+    border-color var(--motion-fast),
+    background-color var(--motion-fast);
+}
+
+.tab:hover:not(:disabled) {
+  background: var(--surface-selected);
+  color: var(--text-primary);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--text-link-pressed);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tab[aria-selected='true']:hover:not(:disabled) {
+  color: var(--text-link-pressed);
+}
+
+/* One rule for every width: five columns fit a desktop row, fewer as the viewport narrows,
+ * one on a handheld - and never a sideways scroll (FR-124, D-18). */
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--board-gap);
+  align-items: start;
+}
+
+.board-column {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.column-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.column-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 1px 9px;
+  flex: 0 0 auto;
+}
+
+/* The column grows to hold its cards. Nothing is trapped behind a scrolling region (FR-126). */
+.column-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  padding: 2px;
+}
+
+.column-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 18px 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-control);
+}
+
+.project-card {
+  display: block;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-ambient);
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform var(--motion-fast),
+    box-shadow var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-elevated);
+}
+
+.project-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.project-card-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.project-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.headcount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.headcount strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.short-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.short-roles .pill {
+  margin: 0;
+  background: var(--tint-warning);
+  border-color: var(--edge-warning);
+  color: var(--warning);
+}
+
+.staffing-note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.lead-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.lead-line .lead-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lead-line-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.avatar-stack {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.avatar-stack .avatar {
+  margin-left: -8px;
+  border: 2px solid var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.avatar-stack .avatar:first-child {
+  margin-left: 0;
+}
+
+.avatar-stack-more {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Loading skeletons. Sized to the content they replace so nothing jumps when
+ * the data arrives (FR-155).
+ * ------------------------------------------------------------------------- */
+
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-base) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+  border-radius: var(--radius-control);
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-card {
+  height: 132px;
+  border-radius: var(--radius-card);
+}
+
+.skeleton-row {
+  height: 44px;
+  margin-bottom: 8px;
+}
+
+.skeleton-line {
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive. The board scrolls sideways within itself; the page never does.
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 780px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .nav {
+    width: 100%;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  main {
+    padding: 20px 16px;
+  }
+
+  /* The board's auto-fit handles every width above this on its own; below it, one column. */
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * One rule, product-wide: anybody who has asked their system for less motion
+ * gets none, while every state change stays visible (FR-156).
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .project-card:hover {
+    transform: none;
+  }
 }

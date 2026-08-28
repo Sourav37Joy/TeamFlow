@@ -60,11 +60,15 @@ model Employee {
 }
 
 model Project {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  status    ProjectStatus
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id     String        @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  status ProjectStatus
+  // Who leads the project. Stored rather than derived: leadership is an independent fact, not a
+  // summary of assignments, and a lead guessed from allocation would frequently name the wrong
+  // person. Optional, and holding it grants no assignment (FR-139, FR-145).
+  leadEmployeeId String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([status])
 }

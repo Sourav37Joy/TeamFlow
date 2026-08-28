@@ -5,6 +5,22 @@ import { PEOPLE, TEAM_PROJECTS } from './team-data';
 
 const prisma = new PrismaClient();
 
+// The real team export has every project Active, which would leave four of the board's five
+// columns permanently empty and the statuses they carry never demonstrated. Four projects are
+// deterministically moved so every column is populated on the demo path (Constitution X).
+// Remove this and the board still works; it just stops showing what it can do.
+const DEMO_STATUSES: Record<number, ProjectStatus> = {
+  0: ProjectStatus.PLANNED,
+  1: ProjectStatus.PLANNED,
+  2: ProjectStatus.ON_HOLD,
+  3: ProjectStatus.COMPLETED,
+  4: ProjectStatus.CANCELLED,
+};
+
+function demoStatus(actual: ProjectStatus, index: number): ProjectStatus {
+  return DEMO_STATUSES[index] ?? actual;
+}
+
 const USERS = [
   { email: 'admin@example.com', displayName: 'Ada Admin', role: UserRole.ADMINISTRATOR },
   { email: 'pm@example.com', displayName: 'Pat Manager', role: UserRole.PROJECT_MANAGER },
@@ -129,9 +145,9 @@ async function main() {
   }
 
   const projectIds = new Map<string, string>();
-  for (const project of TEAM_PROJECTS) {
+  for (const [index, project] of TEAM_PROJECTS.entries()) {
     const created = await prisma.project.create({
-      data: { name: project.name, status: project.status as ProjectStatus },
+      data: { name: project.name, status: demoStatus(project.status as ProjectStatus, index) },
     });
     projectIds.set(project.name, created.id);
 
@@ -151,6 +167,25 @@ async function main() {
         },
       });
     }
+  }
+
+  // Leads: most projects name one, every third deliberately does not, and one is led by
+  // somebody who holds no work on it. All three states have to be on screen for the board to
+  // be demonstrable (FR-140, FR-145, FR-146, Constitution X).
+  for (const [index, project] of TEAM_PROJECTS.entries()) {
+    if (index % 3 === 2) continue;
+
+    const outsider = PEOPLE.find(
+      (person) => !project.members.some((member) => member.slug === person.slug),
+    );
+    const leadSlug =
+      index === 0 && outsider ? outsider.slug : (project.members[0]?.slug ?? outsider?.slug);
+    if (!leadSlug) continue;
+
+    await prisma.project.update({
+      where: { id: required(projectIds, project.name, 'project') },
+      data: { leadEmployeeId: required(employeeIds, leadSlug, 'employee') },
+    });
   }
 
   for (const person of PEOPLE) {
@@ -187,9 +222,20 @@ async function main() {
     assignments: await prisma.assignment.count(),
   };
 
+  // Counted by subtraction rather than by filtering for an absent lead. On MongoDB a project
+  // that never had a lead has no field at all, while one whose lead was cleared through the API
+  // has an explicit null, and no single equality filter matches both.
+  const projectsWithLead = await prisma.project.count({
+    where: { NOT: { leadEmployeeId: null } },
+  });
+  const leadCounts = {
+    projectsWithLead,
+    projectsWithoutLead: counts.projects - projectsWithLead,
+  };
+
   const withoutPortrait = PEOPLE.filter((person) => person.avatarUrl === null).map((p) => p.name);
 
-  process.stdout.write(`Seeded: ${JSON.stringify(counts)}\n`);
+  process.stdout.write(`Seeded: ${JSON.stringify({ ...counts, ...leadCounts })}\n`);
   if (withoutPortrait.length > 0) {
     process.stdout.write(`No portrait, shown as initials: ${withoutPortrait.join(', ')}\n`);
   }

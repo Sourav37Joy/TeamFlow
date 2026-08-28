@@ -12,6 +12,7 @@ import {
   ReplacementShortlist,
   Warning,
 } from '../lib/api';
+import { useDialogFocus } from '../lib/use-dialog-focus';
 import Avatar from './Avatar';
 import CandidateList from './CandidateList';
 import WarningDialog from './WarningDialog';
@@ -27,6 +28,8 @@ interface Props {
 // applied; the percentage and end date can be adjusted before confirming. Cancelling changes
 // nothing at all - the write only happens on confirm (FR-044, FR-052).
 export default function ReplacementDialog({ assignment, employees, onDone, onCancel }: Props) {
+  const dialog = useDialogFocus<HTMLDivElement>();
+
   const [incomingEmployeeId, setIncomingEmployeeId] = useState('');
   const [effectiveDate, setEffectiveDate] = useState('');
   const [allocationPercent, setAllocationPercent] = useState(String(assignment.allocationPercent));
@@ -82,7 +85,7 @@ export default function ReplacementDialog({ assignment, employees, onDone, onCan
 
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label="Replace a person">
-      <div className="dialog wide">
+      <div className="dialog wide" ref={dialog} tabIndex={-1}>
         <h3 className="group-person">
           <Avatar
             name={assignment.employeeName}

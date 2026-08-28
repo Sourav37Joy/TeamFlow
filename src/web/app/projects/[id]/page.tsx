@@ -7,6 +7,7 @@ import AssignmentForm from '../../../components/AssignmentForm';
 import Avatar from '../../../components/Avatar';
 import CandidateList from '../../../components/CandidateList';
 import EmptyState from '../../../components/EmptyState';
+import LeadLine from '../../../components/LeadLine';
 import PersonLink from '../../../components/PersonLink';
 import ReplacementDialog from '../../../components/ReplacementDialog';
 import {
@@ -28,6 +29,7 @@ import {
   RequirementShortlist,
   RequirementStaffingRow,
   STAFFING_STATUS_TEXT,
+  updateProject,
 } from '../../../lib/api';
 import { useSession } from '../../../lib/use-session';
 
@@ -111,6 +113,17 @@ export default function ProjectRecordPage() {
     }
   }
 
+  // An empty choice clears the lead outright rather than leaving the last one in place.
+  async function setLead(employeeId: string) {
+    setError(null);
+    try {
+      await updateProject(projectId, { leadEmployeeId: employeeId || null });
+      await load();
+    } catch (failure) {
+      setError(failureText(failure));
+    }
+  }
+
   if (loading) return <p className="muted">Loading...</p>;
   if (!user) return null;
   if (!project)
@@ -135,6 +148,34 @@ export default function ProjectRecordPage() {
       </header>
 
       {error ? <p className="error">{error}</p> : null}
+
+      <div className="card panel">
+        <div className="group-head">
+          <div>
+            <h3>Project lead</h3>
+            <LeadLine lead={project.lead} size={28} />
+          </div>
+          <div>
+            <label htmlFor="project-lead">Change the lead</label>
+            <select
+              id="project-lead"
+              value={project.lead?.employeeId ?? ''}
+              onChange={(event) => void setLead(event.target.value)}
+            >
+              <option value="">No lead</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <p className="muted">
+          Leading a project is not an assignment. A lead counts towards the headcount only if they
+          also hold work on it.
+        </p>
+      </div>
 
       {!staffing.producesGaps && staffing.totalShortfall > 0 ? (
         <p className="notice">
