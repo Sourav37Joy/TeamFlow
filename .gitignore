@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+src/web/.next/
+src/web/out/
+src/web/next-env.d.ts
+*.tsbuildinfo
+
+# Environment — .env.example is tracked on purpose
+.env
+.env.*
+!.env.example
+*.pem
+
+# Prisma generated client, only when the generator output is customised;
+# the default output lives under node_modules and is already ignored
+src/generated/
+prisma/generated/
+
+# MongoDB data, when the container binds to a local directory
+.mongo-data/
+mongo-data/
+
+# Test and coverage output
+coverage/
+test-results/
+.vitest/
+*.lcov
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Caches
+.cache/
+.eslintcache
+.swc/
+.turbo/
+
+# Editors
+.idea/
+*.swp
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Claude Code machine-local overrides; .claude/skills stays tracked
+.claude/settings.local.json
+
+# Spec Kit machine-local state is handled by .specify/.gitignore
