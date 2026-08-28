@@ -6,9 +6,7 @@ export function isCalendarDate(value: string): value is CalendarDate {
   if (!PATTERN.test(value)) return false;
   const [y, m, d] = value.split('-').map(Number) as [number, number, number];
   const probe = new Date(Date.UTC(y, m - 1, d));
-  return (
-    probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d
-  );
+  return probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d;
 }
 
 export function parseCalendarDate(value: string): Date {

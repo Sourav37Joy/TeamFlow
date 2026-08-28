@@ -19,6 +19,8 @@ npm run db:push                # applies the schema and its indexes
 npm run seed                   # the demo organisation
 ```
 
+**`npm run seed` is re-runnable and replaces the demo register.** It deletes the demo employees, projects, role requirements, and assignments, then rewrites them, so the same populated state is always what you get. The two accounts and the skill and role catalogues are upserted, not deleted. Anything you created yourself while exploring goes with the demo data - re-run it deliberately, not out of habit.
+
 **Port 27018, not 27017.** A locally installed MongoDB service often already owns 27017 as a standalone, and Prisma needs a replica set for `$transaction`, which the replacement handover depends on. Pointing at a standalone fails with `replicaSet name "rs0" does not match actual name <none>`.
 
 **Without Docker**, if MongoDB is installed locally, run a second instance as a replica set and leave the existing service alone:

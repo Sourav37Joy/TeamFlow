@@ -103,19 +103,19 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: Create a project requiring 2 Frontend Developers and 1 QA Engineer, create an employee with two rated skills, fill the project's gap from the project view, then create a second assignment from the employee's record - and read it all back correctly from both sides. Quickstart V1.
 
-- [ ] T027 [P] [US1] Implement the skill and role catalogue endpoints in `src/backend/catalogue/catalogue.controller.ts`: list with `?q=`, and create returning the existing document on a duplicate name so creation flows are never blocked (FR-003, D-03)
-- [ ] T028 [P] [US1] Implement employee endpoints in `src/backend/employees/employees.controller.ts`: list and search by name, role title, and skill; create with capacity and initial rated skills; read one; update; delete behind `?confirm=true` naming the assignments that would be removed (FR-009, FR-013, FR-014)
-- [ ] T029 [US1] Implement the rated-skill sub-resource in `src/backend/employees/employee-skills.controller.ts`, rejecting a rating outside 1 to 5 and a duplicate skill on one employee (FR-010 to FR-012)
-- [ ] T030 [P] [US1] Implement project endpoints in `src/backend/projects/projects.controller.ts`: list and search by name and status; create with the five-value status enum; read one; update; delete behind `?confirm=true` naming the assignments that would be removed (FR-001, FR-006, FR-007)
-- [ ] T031 [US1] Implement role-requirement endpoints in `src/backend/projects/requirements.controller.ts`, rejecting headcount below 1 and a role declared twice on one project (FR-002 to FR-005)
-- [ ] T032 [US1] Implement assignment create, read, update, and delete in `src/backend/assignments/assignments.controller.ts`, rejecting an end date before its start, an allocation outside 1 to 100, and a duplicate employee-project-role triple (FR-016, FR-018, FR-019, FR-022, FR-023)
-- [ ] T033 [US1] Wire the overallocation warning into assignment create and update using `calc/utilization.ts` and the `warnings.ts` plumbing, so the write warns with the resulting total and proceeds on acknowledgement rather than blocking (FR-020, FR-021)
-- [ ] T034 [US1] Implement cascading deletes in `src/backend/common/cascade.ts`, called from the delete handlers in `src/backend/employees/employees.controller.ts` and `src/backend/projects/projects.controller.ts`, each running inside the same Prisma transaction as its parent delete (FR-006, FR-013, D-12)
-- [ ] T035 [P] [US1] Build the employee list and create-edit form in `src/web/app/employees/page.tsx` with inline skill rating entry, writable only to an Administrator (FR-083)
-- [ ] T036 [P] [US1] Build the project list and create-edit form in `src/web/app/projects/page.tsx`, including role requirements with role, required skill, and headcount
-- [ ] T037 [US1] Build the assignment create and edit form in `src/web/components/AssignmentForm.tsx`, reachable pre-filled from a project's unfilled role and from an employee's record (FR-017)
-- [ ] T038 [US1] Build the overallocation warning dialog in `src/web/components/WarningDialog.tsx`, stating the resulting total and offering to proceed (Constitution VIII)
-- [ ] T039 [US1] Extend `seed/index.ts` with the demo employees, projects across all five statuses, and assignments (Constitution X)
+- [X] T027 [P] [US1] Implement the skill and role catalogue endpoints in `src/backend/catalogue/catalogue.controller.ts`: list with `?q=`, and create returning the existing document on a duplicate name so creation flows are never blocked (FR-003, D-03)
+- [X] T028 [P] [US1] Implement employee endpoints in `src/backend/employees/employees.controller.ts`: list and search by name, role title, and skill; create with capacity and initial rated skills; read one; update; delete behind `?confirm=true` naming the assignments that would be removed (FR-009, FR-013, FR-014)
+- [X] T029 [US1] Implement the rated-skill sub-resource in `src/backend/employees/employee-skills.controller.ts`, rejecting a rating outside 1 to 5 and a duplicate skill on one employee (FR-010 to FR-012)
+- [X] T030 [P] [US1] Implement project endpoints in `src/backend/projects/projects.controller.ts`: list and search by name and status; create with the five-value status enum; read one; update; delete behind `?confirm=true` naming the assignments that would be removed (FR-001, FR-006, FR-007)
+- [X] T031 [US1] Implement role-requirement endpoints in `src/backend/projects/requirements.controller.ts`, rejecting headcount below 1 and a role declared twice on one project (FR-002 to FR-005)
+- [X] T032 [US1] Implement assignment create, read, update, and delete in `src/backend/assignments/assignments.controller.ts`, rejecting an end date before its start, an allocation outside 1 to 100, and a duplicate employee-project-role triple (FR-016, FR-018, FR-019, FR-022, FR-023)
+- [X] T033 [US1] Wire the overallocation warning into assignment create and update using `calc/utilization.ts` and the `warnings.ts` plumbing, so the write warns with the resulting total and proceeds on acknowledgement rather than blocking (FR-020, FR-021)
+- [X] T034 [US1] Implement cascading deletes in `src/backend/common/cascade.ts`, called from the delete handlers in `src/backend/employees/employees.controller.ts` and `src/backend/projects/projects.controller.ts`, each running inside the same Prisma transaction as its parent delete (FR-006, FR-013, D-12)
+- [X] T035 [P] [US1] Build the employee list and create-edit form in `src/web/app/employees/page.tsx` with inline skill rating entry, writable only to an Administrator (FR-083)
+- [X] T036 [P] [US1] Build the project list and create-edit form in `src/web/app/projects/page.tsx`, including role requirements with role, required skill, and headcount
+- [X] T037 [US1] Build the assignment create and edit form in `src/web/components/AssignmentForm.tsx`, reachable pre-filled from a project's unfilled role and from an employee's record (FR-017)
+- [X] T038 [US1] Build the overallocation warning dialog in `src/web/components/WarningDialog.tsx`, stating the resulting total and offering to proceed (Constitution VIII)
+- [X] T039 [US1] Extend `seed/index.ts` with the demo employees, projects across all five statuses, and assignments (Constitution X)
 
 **Checkpoint**: User Story 1 is fully functional. The register works from both directions, every validation refusal names its field, and overallocation warns rather than blocks.
 

@@ -1,14 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ApiFailure, SessionUser, signIn, signOut } from '../../lib/api';
+import { failureText, signIn } from '../../lib/api';
 
-// Sign in and sign out, complete. There is nowhere to redirect to yet: the dashboard
-// arrives with User Story 8, and Constitution I rules out a placeholder page to land on.
+// Signing in lands on projects, the first screen with something to do. The dashboard becomes
+// the landing route when User Story 8 builds it; Constitution I rules out a placeholder in
+// the meantime.
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [session, setSession] = useState<SessionUser | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -17,37 +19,12 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      setSession(await signIn(email, password));
-      setPassword('');
+      await signIn(email, password);
+      router.replace('/projects');
     } catch (failure) {
-      setError(
-        failure instanceof ApiFailure ? failure.error.message : 'Sign in could not be completed.',
-      );
-    } finally {
+      setError(failureText(failure));
       setBusy(false);
     }
-  }
-
-  async function leave() {
-    await signOut();
-    setSession(null);
-  }
-
-  if (session) {
-    return (
-      <div className="card" style={{ maxWidth: 420 }}>
-        <h2 style={{ marginTop: 0 }}>Signed in</h2>
-        <p>
-          {session.displayName} &middot; {session.email}
-        </p>
-        <p>
-          Role: <strong>{session.role === 'ADMINISTRATOR' ? 'Administrator' : 'Project Manager'}</strong>
-        </p>
-        <button type="button" onClick={leave}>
-          Sign out
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -60,7 +37,7 @@ export default function LoginPage() {
           id="email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(event) => setEmail(event.target.value)}
           autoComplete="username"
           required
         />
@@ -69,7 +46,7 @@ export default function LoginPage() {
           id="password"
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
           required
         />

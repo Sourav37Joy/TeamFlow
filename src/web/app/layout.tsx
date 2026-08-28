@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import SessionNav from '../components/SessionNav';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="shell">
           <nav className="nav">
             <h1>TeamFlow</h1>
+            <SessionNav />
           </nav>
           <main>{children}</main>
         </div>

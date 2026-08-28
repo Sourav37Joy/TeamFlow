@@ -47,10 +47,7 @@ export function activeAssignments(
 }
 
 // Utilization is the sum of the allocations active on the evaluation date (FR-032).
-export function utilizationPercent(
-  assignments: AssignmentRecord[],
-  asOf: CalendarDate,
-): number {
+export function utilizationPercent(assignments: AssignmentRecord[], asOf: CalendarDate): number {
   return activeAssignments(assignments, asOf).reduce((sum, a) => sum + a.allocationPercent, 0);
 }
 
@@ -83,10 +80,7 @@ export function utilizationFor(
   return {
     employeeId: employee.id,
     utilizationPercent: utilization,
-    remainingCapacityPercent: remainingCapacityPercent(
-      employee.totalCapacityPercent,
-      utilization,
-    ),
+    remainingCapacityPercent: remainingCapacityPercent(employee.totalCapacityPercent, utilization),
     loadLabel: loadLabel(utilization),
     contributingAssignments: contributing,
   };
@@ -124,10 +118,9 @@ export function wouldOverallocate(
   for (const date of boundaries) {
     const total =
       incoming.allocationPercent +
-      others.filter((a) => isWithinRange(date, a.startDate, a.endDate)).reduce(
-        (sum, a) => sum + a.allocationPercent,
-        0,
-      );
+      others
+        .filter((a) => isWithinRange(date, a.startDate, a.endDate))
+        .reduce((sum, a) => sum + a.allocationPercent, 0);
     if (total > worst) {
       worst = total;
       worstDate = date;

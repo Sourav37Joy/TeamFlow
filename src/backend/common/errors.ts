@@ -83,10 +83,7 @@ export class NotFound extends HttpException {
 // A destructive delete names what would go with it before it proceeds (FR-006, FR-013).
 export class ConfirmationRequired extends HttpException {
   constructor(message: string, wouldRemove: unknown[]) {
-    super(
-      body('CONFIRMATION_REQUIRED', message, { wouldRemove }),
-      HttpStatus.CONFLICT,
-    );
+    super(body('CONFIRMATION_REQUIRED', message, { wouldRemove }), HttpStatus.CONFLICT);
   }
 }
 
