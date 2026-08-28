@@ -1,0 +1,7 @@
+{
+  "watch": ["src/backend"],
+  "ext": "ts",
+  "ignore": ["src/backend/**/*.spec.ts"],
+  "exec": "node --env-file=.env -r ts-node/register/transpile-only src/backend/main.ts",
+  "delay": 300
+}

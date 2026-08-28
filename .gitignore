@@ -22,6 +22,7 @@ prisma/generated/
 
 # MongoDB data, when the container binds to a local directory
 .mongo-data/
+.mongo-data-docker/
 mongo-data/
 
 # Test and coverage output

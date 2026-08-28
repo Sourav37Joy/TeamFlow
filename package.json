@@ -1,0 +1,54 @@
+{
+  "name": "teamflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TeamFlow resource planning - one deployable, NestJS serving Next.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon",
+    "build": "next build src/web && tsc -p tsconfig.build.json",
+    "start": "cross-env NODE_ENV=production node --env-file=.env dist/backend/main.js",
+    "seed": "tsx --env-file=.env seed/index.ts",
+    "seed:scale": "tsx --env-file=.env seed/scale.ts",
+    "seed:import": "tsx seed/import-team.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@prisma/client": "^6.2.0",
+    "argon2": "^0.41.1",
+    "cookie-parser": "^1.4.7",
+    "cross-env": "^7.0.3",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.17.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.4.2",
+    "prisma": "^6.2.0",
+    "sharp": "^0.35.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

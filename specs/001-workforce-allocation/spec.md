@@ -23,6 +23,7 @@
 - Q: Should the system authenticate users, and with what permission model? → A: Yes; two roles - Project Manager and Administrator - both with full read access, Administrator additionally managing employees, catalogues, and accounts (FR-082 to FR-087, FR-080).
 - Q: Which user stories must ship in the initial release, given the constitution's time budget? → A: User Stories 1 to 6 plus the dashboard (Story 8); User Story 7, what-if scenarios, is deferred.
 - Q: Are skills and roles free text or a managed vocabulary? → A: Managed catalogues referenced by identity, extensible while creating a project or employee, so that skill matching and per-role staffing counts are reliable.
+- Q: The user stories say "project manager" throughout, but two roles now exist - which requirements are Administrator-gated? → A: In the user stories and edge cases, "project manager" means any signed-in user. Where a role actually matters, the requirement names it: Administrator-gated writes are employees (FR-009, FR-010, FR-012), catalogue renames and removals (FR-083), and user accounts (FR-083). Everything else is available to both roles.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -37,8 +38,8 @@ A project manager creates a project and declares what it needs: the roles it req
 **Acceptance Scenarios**:
 
 1. **Given** an empty system, **When** the project manager creates a project named "Atlas Migration" with status Active requiring 2 Frontend Developers (skill: React) and 1 QA Engineer (skill: Test Automation), **Then** the project is stored with both role requirements, their headcount, and their required skill.
-2. **Given** an empty system, **When** the project manager creates an employee with a name, a role title, and the skills "React: 4" and "Node.js: 3", **Then** the employee is stored and both skills appear with their ratings.
-3. **Given** an existing employee, **When** the project manager changes a skill rating from 3 to 5, **Then** the updated rating is reflected everywhere that employee's proficiency is shown.
+2. **Given** an empty system, **When** an administrator creates an employee with a name, a role title, and the skills "React: 4" and "Node.js: 3", **Then** the employee is stored and both skills appear with their ratings.
+3. **Given** an existing employee, **When** an administrator changes a skill rating from 3 to 5, **Then** the updated rating is reflected everywhere that employee's proficiency is shown.
 4. **Given** a project with an unfilled Frontend Developer role, **When** the project manager chooses to fill that role from the project view and picks an employee at 50% from 2026-09-01 to 2026-12-31, **Then** the assignment is created with the role pre-filled and is visible from both the project's record and the employee's record.
 5. **Given** an employee's record, **When** the project manager creates an assignment from there by picking a project and role, **Then** the assignment is created and appears identically in the project's record.
 6. **Given** the project manager is creating an assignment, **When** they submit an end date earlier than the start date, **Then** the system rejects the assignment with a message naming the invalid date range and stores nothing.
@@ -229,12 +230,12 @@ The project manager lands on a single dashboard that answers the three standing 
 
 #### Employees and skills
 
-- **FR-009**: Project managers MUST be able to create, view, update, and delete employees, each with at minimum a name and a role title.
-- **FR-010**: Project managers MUST be able to attach any number of skills to an employee, each with a proficiency rating that is an integer from 1 to 5 inclusive.
+- **FR-009**: Every employee MUST carry at minimum a name and a role title. Administrators MUST be able to create, update, and delete employees; every signed-in user MUST be able to view them.
+- **FR-010**: Administrators MUST be able to attach any number of skills to an employee, each with a proficiency rating that is an integer from 1 to 5 inclusive.
 - **FR-011**: The system MUST reject a skill rating outside 1 to 5, and MUST reject the same skill being attached twice to the same employee.
-- **FR-012**: Project managers MUST be able to update or remove an employee's individual skill ratings without recreating the employee.
+- **FR-012**: Administrators MUST be able to update or remove an employee's individual skill ratings without recreating the employee.
 - **FR-013**: The system MUST require explicit confirmation, naming the assignments that would be removed, before deleting an employee who holds any assignment.
-- **FR-014**: Project managers MUST be able to list and search employees by name, role title, skill, and load label.
+- **FR-014**: Every signed-in user MUST be able to list and search employees by name, role title, skill, and load label.
 - **FR-015**: Every employee MUST carry an explicit total working capacity, expressed as a percentage, which all remaining-capacity figures are calculated against.
 
 #### Assignments
@@ -247,7 +248,7 @@ The project manager lands on a single dashboard that answers the three standing 
 - **FR-021**: When a new or edited assignment would push an employee above their total capacity on any date in its range, the system MUST warn prominently, state the resulting total, and allow the project manager to proceed deliberately rather than blocking the save.
 - **FR-022**: The system MUST reject a second assignment of the same employee to the same project in the same role, directing the project manager to edit the existing allocation instead.
 - **FR-023**: Project managers MUST be able to edit an assignment's role, allocation percentage, and date range, and to delete an assignment.
-- **FR-024**: Project managers MUST be able to view assignments from both directions: all assignments held by an employee, and all people assigned to a project.
+- **FR-024**: Every signed-in user MUST be able to view assignments from both directions: all assignments held by an employee, and all people assigned to a project.
 - **FR-025**: Every assignment MUST record when it was created and when it was last changed, so that the register can be audited.
 
 #### Allocation overview - who is assigned where
@@ -335,7 +336,7 @@ The project manager lands on a single dashboard that answers the three standing 
 #### Authentication and authorization
 
 - **FR-082**: Users MUST authenticate before reaching any project, employee, assignment, or derived figure; unauthenticated requests MUST be refused.
-- **FR-083**: The system MUST support exactly two roles. A **Project Manager** MUST be able to create and change projects, role requirements, assignments, and replacements. An **Administrator** MUST be able to do everything a Project Manager can, and MUST additionally be able to create and change employees, the skill and role catalogues, and user accounts.
+- **FR-083**: The system MUST support exactly two roles. A **Project Manager** MUST be able to create and change projects, role requirements, assignments, and replacements. An **Administrator** MUST be able to do everything a Project Manager can, and MUST additionally be able to create and change employees, rename or remove skill and role catalogue entries, and manage user accounts. Both roles MUST be able to add a new skill or role to the catalogue while creating a project or an employee, so that a creation flow is never blocked.
 - **FR-084**: Both roles MUST have full read access to all projects, employees, assignments, and derived figures, so that reallocation decisions are never blocked by visibility (FR-080).
 - **FR-085**: An attempt to perform an action the signed-in user's role does not permit MUST be refused with a message naming the action and the role required, and MUST leave stored data unchanged.
 - **FR-086**: Users MUST be able to sign out, after which their session no longer grants access.
@@ -355,8 +356,8 @@ The project manager lands on a single dashboard that answers the three standing 
 - **Utilization**: A derived view of one employee on one date - total committed percentage, remaining capacity, load label, and the contributing assignments.
 - **Project Staffing**: A derived view of one project on one date - per role, required versus filled headcount and the resulting shortfall or surplus, plus an overall staffing status.
 - **Candidate Suggestion**: A derived, ranked recommendation of an employee for a specific role requirement or replacement, carrying the overall score and both visible components of skill proficiency and remaining capacity.
-- **Scenario**: A named, isolated container of draft changes with a status of open or committed, owned by the project manager who created it.
-- **Scenario Change**: One draft modification held inside a scenario - adding, editing, removing, or replacing the employee on an assignment - never applied to live data until the scenario is committed.
+- **Scenario** (DEFERRED with User Story 7): A named, isolated container of draft changes with a status of open or committed, owned by the project manager who created it.
+- **Scenario Change** (DEFERRED with User Story 7): One draft modification held inside a scenario - adding, editing, removing, or replacing the employee on an assignment - never applied to live data until the scenario is committed.
 
 ## Success Criteria *(mandatory)*
 
@@ -375,9 +376,9 @@ The project manager lands on a single dashboard that answers the three standing 
 - **SC-011**: Every candidate suggestion displays both score components, so that a project manager can explain any recommendation's ranking without consulting documentation - verified for 100% of suggestions in acceptance testing.
 - **SC-012**: Candidate ranking is repeatable: the same data produces the same order on every request, verified across 100% of tie cases.
 - **SC-013**: A project manager can go from spotting a role gap to reading a ranked candidate shortlist in 3 interactions or fewer.
-- **SC-014**: A project manager can build a scenario with three draft changes and read its before-and-after comparison in under 3 minutes.
-- **SC-015**: In 100% of test cases, live utilization and staffing figures are identical before and after a scenario is created, viewed, and discarded.
-- **SC-016**: In 100% of failed scenario commits, no draft change is partially applied.
+- **SC-014** (DEFERRED with User Story 7): A project manager can build a scenario with three draft changes and read its before-and-after comparison in under 3 minutes.
+- **SC-015** (DEFERRED with User Story 7): In 100% of test cases, live utilization and staffing figures are identical before and after a scenario is created, viewed, and discarded.
+- **SC-016** (DEFERRED with User Story 7): In 100% of failed scenario commits, no draft change is partially applied.
 - **SC-017**: The dashboard, the allocation overview, and every detail view become usable within 2 seconds for an organisation of 500 employees, 100 projects, and 2,000 assignments.
 - **SC-018**: 100% of rejected inputs produce a message naming the offending field and its permitted values, verified against every validation rule in the requirements.
 - **SC-019**: A project manager who has never seen the tool can complete the journey "find someone with spare capacity and assign them to an understaffed project" unaided on the first attempt.
@@ -398,8 +399,8 @@ The project manager lands on a single dashboard that answers the three standing 
 - **Skill proficiency is a whole number from 1 to 5**, with 5 the most proficient, as stated in the description.
 - **Assignments are date-bounded**: open-ended assignments with no end date are not supported.
 - **No calendar awareness**: public holidays, leave, vacation, and sickness do not reduce capacity in this version. Availability is a function of assignments only.
-- **Scenarios are private to their creator** and are not shared, reviewed, or approved by another person before commit.
-- **Scenario drafts are not auto-refreshed**: a comparison reflects live data as read at view time, and conflicts caused by live changes surface at commit as stale-change refusals rather than being silently merged.
+- **Scenarios are private to their creator** (DEFERRED with User Story 7) and are not shared, reviewed, or approved by another person before commit.
+- **Scenario drafts are not auto-refreshed** (DEFERRED with User Story 7): a comparison reflects live data as read at view time, and conflicts caused by live changes surface at commit as stale-change refusals rather than being silently merged.
 - **Delete is a hard delete** behind a confirmation step, not an archive with restore. Replacement history survives as part of the assignment record; deleting the assignment removes it.
 - **No notifications**: the tool surfaces overallocation and gaps when a project manager looks; it does not proactively alert anyone.
 - **No integrations**: this version neither imports from nor exports to HR systems, project trackers, or payroll. Data is entered and maintained inside the tool.
@@ -407,3 +408,4 @@ The project manager lands on a single dashboard that answers the three standing 
 - **Reporting is present-tense**: the evaluation date lets a project manager look at any single date, but historical trend reporting and forward capacity forecasting are out of scope.
 - **What-if scenarios are deferred**: User Story 7 and FR-062 to FR-071 remain specified but are out of the initial release, cut under the constitution's time budget. Nothing else in the spec depends on them.
 - **Employee lifecycle and concurrent-edit protection are deferred**: this version has no departed-employee state and no optimistic-locking check on simultaneous edits. Both are recorded as known gaps in the plan rather than requirements, on the same time-budget grounds.
+- **Knowledge concentration is not addressed, and this is an open constitution question**: Constitution VIII names three states the tool exists to surface - overallocation, understaffed projects, and knowledge concentration. This specification covers the first two and says nothing about the third: there is no requirement for spotting a skill held by only one person, or a project depending on a sole holder of a required skill. Recorded here so the omission is explicit rather than silent, as Governance requires. It needs either a new requirement group or an explicit amendment to Principle VIII, and it is outstanding.

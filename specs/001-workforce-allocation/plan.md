@@ -20,7 +20,7 @@ Full reasoning and rejected alternatives for every decision are in [research.md]
 
 **Language/Version**: TypeScript 5.7 on Node.js 22 LTS
 
-**Primary Dependencies**: NestJS 11 (HTTP, DI, guards) serving Next.js 15 (App Router, React 19); Prisma 6 with the MongoDB connector; Zod for request validation; Argon2 for password hashing; `@nestjs/passport` with a session cookie strategy
+**Primary Dependencies**: NestJS 11 (HTTP, DI, guards) serving Next.js 15 (App Router, React 19); Prisma 6 with the MongoDB connector; Zod for request validation; Argon2id for password hashing; a signed HTTP-only session cookie via `cookie-parser` and one Nest guard - no Passport, since a single email-and-password form does not earn that indirection (Constitution VII)
 
 **Storage**: MongoDB 7 as a **single-node replica set** (required - Prisma's `$transaction` needs one, and replacement atomicity depends on it). Calendar dates stored as `YYYY-MM-DD` strings; BSON dates reserved for real timestamps
 
@@ -99,7 +99,7 @@ src/
 │   ├── assignments/                   #   CRUD plus replacement (FR-016 to FR-052)
 │   ├── catalogue/                     #   skills and roles (FR-003, FR-010)
 │   ├── views/                         #   allocation overview, dashboard (FR-026 to FR-031, FR-072 to FR-077)
-│   └── common/                        #   error envelope, Zod pipe, warning/dry-run plumbing
+│   └── common/                        #   error envelope, Zod pipe, warning/dry-run plumbing, cascade helpers
 │
 └── web/                               # the Next.js App Router front end
     ├── app/
@@ -112,7 +112,7 @@ src/
     └── lib/api.ts                     #   typed fetch against /api
 
 tests/                                 # Vitest over src/backend/calc only
-seed/                                  # npm run seed - every displayable state (Constitution X)
+seed/                                  # index.ts for npm run seed, scale.ts for the SC-017 check (Constitution X)
 docker-compose.yml                     # MongoDB 7 as a single-node replica set
 ```
 
@@ -166,3 +166,14 @@ These were identified as real problems and are being carried anyway, on the cons
 | 0 - Outline and research | [research.md](./research.md) | Complete, revised for the confirmed stack |
 | 1 - Design and contracts | [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md) | Complete, revised |
 | 2 - Task breakdown | `tasks.md` | Not started - run `/speckit-tasks` |
+
+## Outstanding constitution question
+
+**Constitution VIII names three states the tool exists to surface: overallocation, understaffed projects, and knowledge concentration.** The specification covers the first two and is silent on the third - there is no requirement anywhere for spotting a skill held by only one person, or a project depending on a sole holder of a required skill.
+
+This is recorded rather than resolved, because Governance forbids ignoring a principle silently but also puts amendments outside the reach of a plan. It needs one of two things, and it is a decision rather than an oversight:
+
+1. **Add it to the specification** - a small requirement group and one dashboard panel: skills held by exactly one active employee, and Planned or Active projects whose required skill has a single holder. It reuses the existing employee-skill data and needs no new collection.
+2. **Amend Principle VIII explicitly** to drop knowledge concentration from what the tool claims to surface.
+
+It does not block Phases 1 or 2, which build infrastructure only. It would need settling before the dashboard (Phase 9) is considered complete.
