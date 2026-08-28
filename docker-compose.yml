@@ -1,0 +1,31 @@
+# MongoDB as a single-node replica set. The replica set is not optional: Prisma's
+# $transaction requires one, and the replacement handover depends on it (D-12).
+#
+# Port 27018 rather than the default 27017, so this never collides with a locally
+# installed MongoDB service. mongod listens on 27018 inside the container too, so the
+# port a client dials and the host recorded in the replica set config are the same -
+# a mismatch there is what leaves the set permanently unreachable.
+#
+# Initiation happens in the healthcheck rather than a separate init container: it is
+# idempotent, it retries on its own, and there is no ordering to get wrong.
+services:
+  db:
+    image: mongo:7
+    container_name: teamflow-mongo
+    command: ['mongod', '--replSet', 'rs0', '--port', '27018', '--bind_ip_all']
+    ports:
+      - '27018:27018'
+    volumes:
+      - ./.mongo-data-docker:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          mongosh --port 27018 --quiet --eval "
+            try { rs.status().ok }
+            catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27018'}]}).ok }
+          "
+      interval: 5s
+      timeout: 15s
+      retries: 30
+      start_period: 10s

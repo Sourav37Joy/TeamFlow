@@ -27,7 +27,7 @@ Every non-2xx response uses one envelope:
 | `400` | `VALIDATION_FAILED` | Any field-level rule broken. `details` names every offending field (FR-078) |
 | `401` | `NOT_AUTHENTICATED` | Missing or expired session (FR-082) |
 | `403` | `ROLE_NOT_PERMITTED` | The action requires a role the signed-in user does not hold; names the action and the role required (FR-085) |
-| `404` | `NOT_FOUND` | Referenced employee, project, requirement, assignment, or scenario does not exist |
+| `404` | `NOT_FOUND` | Referenced employee, project, requirement, or assignment does not exist |
 | `409` | `CONFIRMATION_REQUIRED` | Delete of an employee or project holding assignments, without `?confirm=true`; body lists the assignments that would be removed (FR-006, FR-013) |
 | `409` | `WARNINGS_NOT_ACKNOWLEDGED` | The write would cause overallocation and `acknowledgeWarnings` was not set; body carries the warnings (FR-021, FR-050) |
 | `422` | `RULE_VIOLATION` | A domain rule rather than a field format - see the table below |

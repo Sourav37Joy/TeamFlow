@@ -1,0 +1,6 @@
+node_modules/
+dist/
+src/web/.next/
+coverage/
+package-lock.json
+prisma/generated/

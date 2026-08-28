@@ -14,21 +14,21 @@ One deployable, one database, one command to run it (Constitution VII). Data sha
 ```bash
 npm install
 cp .env.example .env
-docker compose up -d            # MongoDB 7, replica set rs0, initiated on first start
-npx prisma db push              # applies the schema and its indexes
-npm run seed                    # the demo organisation
+docker compose up -d           # MongoDB 7, replica set rs0, on port 27018
+npm run db:push                # applies the schema and its indexes
+npm run seed                   # the demo organisation
 ```
 
-**Why a replica set**: Prisma's `$transaction` requires one, and the replacement operation depends on it. A standalone `mongod` will fail at the point a handover is confirmed. `docker-compose.yml` initiates `rs0` automatically (D-12).
+**Port 27018, not 27017.** A locally installed MongoDB service often already owns 27017 as a standalone, and Prisma needs a replica set for `$transaction`, which the replacement handover depends on. Pointing at a standalone fails with `replicaSet name "rs0" does not match actual name <none>`.
 
-**What `npm run seed` produces** - every state the tool can display, per Constitution X:
+**Without Docker**, if MongoDB is installed locally, run a second instance as a replica set and leave the existing service alone:
 
-- Two accounts: `admin@example.com` (Administrator) and `pm@example.com` (Project Manager), password `teamflow-dev`
-- All five project statuses, including a Completed and a Cancelled project that must *not* appear in the gaps panel
-- Every load label present: someone Unassigned, Available, Balanced, High load, and at least two Overallocated
-- Understaffed, fully staffed, overstaffed, and no-requirements projects
-- One assignment on a role the project never declared, to exercise unrequested surplus
-- One completed replacement, so history is visible without performing one first
+```bash
+mongod --dbpath .mongo-data --port 27018 --replSet rs0 --bind_ip 127.0.0.1
+mongosh --port 27018 --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27018'}]})"
+```
+
+See [DEVELOPMENT.md](../../DEVELOPMENT.md) for the two toolchain constraints this build depends on.
 
 ## Run
 

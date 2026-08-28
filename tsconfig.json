@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2023"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@backend/*": ["src/backend/*"]
+    }
+  },
+  "include": ["src/backend/**/*.ts", "tests/**/*.ts", "seed/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/web"]
+}

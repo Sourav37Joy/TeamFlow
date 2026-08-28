@@ -1,0 +1,101 @@
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --ink: #16191d;
+  --muted: #5b6470;
+  --line: #dfe3e8;
+  --accent: #2b5fd9;
+  --warn: #b4530a;
+  --danger: #b3261e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav {
+  width: 220px;
+  flex: 0 0 220px;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 20px 16px;
+}
+
+.nav h1 {
+  font-size: 17px;
+  margin: 0 0 20px;
+}
+
+.nav a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.nav a:hover {
+  background: var(--bg);
+}
+
+main {
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1200px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  margin-bottom: 14px;
+}
+
+button {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
