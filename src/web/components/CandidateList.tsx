@@ -2,6 +2,7 @@
 
 import { Candidate } from '../lib/api';
 import EmptyState from './EmptyState';
+import PersonLink from './PersonLink';
 
 interface Props {
   candidates: Candidate[];
@@ -56,7 +57,12 @@ export default function CandidateList({
           {candidates.map((candidate) => (
             <tr key={candidate.employeeId}>
               <td>
-                <strong>{candidate.name}</strong>
+                <PersonLink
+                  id={candidate.employeeId}
+                  name={candidate.name}
+                  avatarUrl={candidate.avatarUrl}
+                  size={28}
+                />
               </td>
               <td>
                 <span className="score">{candidate.overallScore}</span>

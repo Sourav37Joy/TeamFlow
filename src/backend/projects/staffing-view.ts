@@ -1,12 +1,13 @@
 import { Project } from '@prisma/client';
 import { CalendarDate } from '../calc/dates';
 import { Filler, producesGaps, staffingForProject, StaffingStatus } from '../calc/staffing';
-import { nameIndex, unique } from '../common/fields';
+import { nameIndex, personIndex, unique } from '../common/fields';
 import { PrismaService } from '../prisma.service';
 
 export interface FillerRow {
   employeeId: string;
   employeeName: string;
+  employeeAvatarUrl: string | null;
   allocationPercent: number;
   assignmentId: string;
 }
@@ -65,18 +66,19 @@ export async function staffingViews(
 
   const employees = await prisma.employee.findMany({
     where: { id: { in: unique(assignments.map((assignment) => assignment.employeeId)) } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, avatarUrl: true },
   });
 
   const roleNames = nameIndex(roles);
   const skillNames = nameIndex(skills);
-  const employeeNames = nameIndex(employees);
+  const employeeLabels = personIndex(employees);
 
   const named = (fillers: Filler[]): FillerRow[] =>
     fillers
       .map((filler) => ({
         employeeId: filler.employeeId,
-        employeeName: employeeNames.get(filler.employeeId) ?? UNKNOWN,
+        employeeName: employeeLabels.get(filler.employeeId)?.name ?? UNKNOWN,
+        employeeAvatarUrl: employeeLabels.get(filler.employeeId)?.avatarUrl ?? null,
         allocationPercent: filler.allocationPercent,
         assignmentId: filler.assignmentId,
       }))

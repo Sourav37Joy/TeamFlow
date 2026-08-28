@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import AssignmentForm from '../../components/AssignmentForm';
 import CatalogueAdd from '../../components/CatalogueAdd';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
+import PersonLink from '../../components/PersonLink';
 import LoadLabel from '../../components/LoadLabel';
 import {
   ApiFailure,
@@ -241,9 +241,12 @@ export default function EmployeesPage() {
           {employees.map((employee) => (
             <tr key={employee.id}>
               <td>
-                <Link href={`/employees/${employee.id}`}>
-                  <strong>{employee.name}</strong>
-                </Link>
+                <PersonLink
+                  id={employee.id}
+                  name={employee.name}
+                  avatarUrl={employee.avatarUrl}
+                  size={36}
+                />
               </td>
               <td>{employee.roleTitle}</td>
               <td>

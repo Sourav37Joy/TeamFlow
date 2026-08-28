@@ -49,6 +49,9 @@ model Employee {
   name                 String
   roleTitle            String
   totalCapacityPercent Int             @default(100)
+  // Path to a square portrait served from src/web/public. Optional: somebody with no usable
+  // photograph is shown as their initials rather than as a guess.
+  avatarUrl            String?
   skills               EmployeeSkill[]
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt

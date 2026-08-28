@@ -41,6 +41,7 @@ export class DashboardController {
       .map((entry) => ({
         employeeId: entry.employee.id,
         name: entry.employee.name,
+        avatarUrl: entry.employee.avatarUrl,
         roleTitle: entry.employee.roleTitle,
         utilizationPercent: entry.utilization.utilizationPercent,
         totalCapacityPercent: entry.employee.totalCapacityPercent,
@@ -59,6 +60,7 @@ export class DashboardController {
       .map((entry) => ({
         employeeId: entry.employee.id,
         name: entry.employee.name,
+        avatarUrl: entry.employee.avatarUrl,
         roleTitle: entry.employee.roleTitle,
         remainingCapacityPercent: entry.utilization.remainingCapacityPercent,
         utilizationPercent: entry.utilization.utilizationPercent,

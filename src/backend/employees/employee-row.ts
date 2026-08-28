@@ -5,6 +5,7 @@ export interface EmployeeRow {
   name: string;
   roleTitle: string;
   totalCapacityPercent: number;
+  avatarUrl: string | null;
   skills: Array<{ skillId: string; skillName: string; rating: number }>;
 }
 
@@ -16,6 +17,7 @@ export function employeeRow(employee: Employee, skillNames: Map<string, string>)
     name: employee.name,
     roleTitle: employee.roleTitle,
     totalCapacityPercent: employee.totalCapacityPercent,
+    avatarUrl: employee.avatarUrl,
     skills: employee.skills
       .map((rated) => ({
         skillId: rated.skillId,

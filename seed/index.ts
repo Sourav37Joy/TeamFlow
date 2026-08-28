@@ -1,265 +1,70 @@
 import { PrismaClient, ProjectStatus, UserRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { formatCalendarDate, parseCalendarDate, todayIn } from '../src/backend/calc/dates';
+import { PEOPLE, TEAM_PROJECTS } from './team-data';
 
 const prisma = new PrismaClient();
-
-const SKILLS = [
-  'React',
-  'Node.js',
-  'TypeScript',
-  'Test Automation',
-  'UX Design',
-  'Data Engineering',
-  'Kubernetes',
-];
-
-const ROLES = [
-  'Frontend Developer',
-  'Backend Developer',
-  'QA Engineer',
-  'Designer',
-  'Data Engineer',
-  'Tech Lead',
-];
 
 const USERS = [
   { email: 'admin@example.com', displayName: 'Ada Admin', role: UserRole.ADMINISTRATOR },
   { email: 'pm@example.com', displayName: 'Pat Manager', role: UserRole.PROJECT_MANAGER },
 ];
 
-interface EmployeeSeed {
-  name: string;
-  roleTitle: string;
-  totalCapacityPercent?: number;
-  skills: Array<[string, number]>;
-}
+// How much of somebody's week is committed in total. Their time is then divided evenly across
+// the teams they belong to. The export carries no allocation data at all, so these are the one
+// invented figure in the seed, chosen to put every load band on the screen: three people over
+// capacity, three comfortable, three lightly committed, and everybody else fully committed.
+const TOTAL_COMMITMENT = 100;
+const OVERLOADED = new Map([
+  ['rubel', 120],
+  ['mahfuzul', 120],
+  ['shams', 120],
+]);
+const PART_TIME = new Map([
+  ['odree', 60],
+  ['reza', 60],
+  ['joy', 60],
+]);
+const LIGHTLY_COMMITTED = new Map([
+  ['lushan', 40],
+  ['saqlain', 40],
+  ['shohag', 40],
+]);
 
-const EMPLOYEES: EmployeeSeed[] = [
-  {
-    name: 'Amara Osei',
-    roleTitle: 'Frontend Developer',
-    skills: [
-      ['React', 5],
-      ['TypeScript', 4],
-    ],
-  },
-  {
-    name: 'Ben Carter',
-    roleTitle: 'Backend Developer',
-    skills: [
-      ['Node.js', 4],
-      ['Kubernetes', 3],
-    ],
-  },
-  {
-    name: 'Chen Wei',
-    roleTitle: 'QA Engineer',
-    skills: [
-      ['Test Automation', 5],
-      ['TypeScript', 3],
-    ],
-  },
-  { name: 'Dara Novak', roleTitle: 'Designer', skills: [['UX Design', 4]] },
-  {
-    name: 'Elif Demir',
-    roleTitle: 'Data Engineer',
-    skills: [
-      ['Data Engineering', 5],
-      ['Node.js', 2],
-    ],
-  },
-  {
-    name: 'Farid Haddad',
-    roleTitle: 'Tech Lead',
-    skills: [
-      ['Node.js', 5],
-      ['React', 3],
-      ['Kubernetes', 4],
-    ],
-  },
-  {
-    name: 'Grace Lin',
-    roleTitle: 'Frontend Developer',
-    skills: [
-      ['React', 3],
-      ['UX Design', 2],
-    ],
-  },
-  {
-    name: 'Hugo Alves',
-    roleTitle: 'Backend Developer',
-    skills: [
-      ['Node.js', 3],
-      ['TypeScript', 3],
-    ],
-  },
-  { name: 'Ines Ruiz', roleTitle: 'QA Engineer', skills: [['Test Automation', 3]] },
-];
+// Two commitments deliberately sit outside today: one finished last month and one starts next
+// month. Both people therefore read as unassigned today while staying on their team's record,
+// and both teams show a real shortfall for the gaps panel to chase (FR-035, FR-075).
+const ENDED_LAST_MONTH = new Set(['ibnul']);
+const STARTS_NEXT_MONTH = new Set(['raiyan']);
 
-// Every project status exists in the seeded data, so the status filter and the gap rules that
-// exclude On hold, Completed, and Cancelled have something to act on (Constitution X, D-02).
-const PROJECTS: Array<{
-  name: string;
-  status: ProjectStatus;
-  requirements: Array<[string, string, number]>;
-}> = [
-  {
-    name: 'Atlas Rollout',
-    status: ProjectStatus.ACTIVE,
-    requirements: [
-      ['Frontend Developer', 'React', 2],
-      ['QA Engineer', 'Test Automation', 1],
-    ],
-  },
-  {
-    name: 'Beacon Migration',
-    status: ProjectStatus.ACTIVE,
-    requirements: [
-      ['Backend Developer', 'Node.js', 3],
-      ['Data Engineer', 'Data Engineering', 1],
-    ],
-  },
-  {
-    name: 'Compass Redesign',
-    status: ProjectStatus.PLANNED,
-    requirements: [
-      ['Designer', 'UX Design', 1],
-      ['Frontend Developer', 'React', 1],
-    ],
-  },
-  {
-    name: 'Delta Reporting',
-    status: ProjectStatus.ON_HOLD,
-    requirements: [['Data Engineer', 'Data Engineering', 2]],
-  },
-  {
-    name: 'Echo Launch',
-    status: ProjectStatus.COMPLETED,
-    requirements: [['Tech Lead', 'Node.js', 1]],
-  },
-  {
-    name: 'Foxtrot Trial',
-    status: ProjectStatus.CANCELLED,
-    requirements: [['QA Engineer', 'Test Automation', 1]],
-  },
-];
-
-// Dates are seeded relative to today, so "active now", "already ended", and "not yet started"
-// stay true whenever the seed is run (Constitution X).
 function shift(days: number): string {
   const date = parseCalendarDate(todayIn('UTC'));
   date.setUTCDate(date.getUTCDate() + days);
   return formatCalendarDate(date);
 }
 
-// Each row is a state the tool must be able to show: overallocation, comfortable load, a
-// commitment that has expired, one that has not begun, and a role the project never declared.
-const ASSIGNMENTS: Array<{
-  employee: string;
-  project: string;
-  role: string;
-  percent: number;
-  from: number;
-  to: number;
-}> = [
-  {
-    employee: 'Amara Osei',
-    project: 'Atlas Rollout',
-    role: 'Frontend Developer',
-    percent: 60,
-    from: -30,
-    to: 90,
-  },
-  {
-    employee: 'Amara Osei',
-    project: 'Compass Redesign',
-    role: 'Frontend Developer',
-    percent: 60,
-    from: -10,
-    to: 120,
-  },
-  {
-    employee: 'Chen Wei',
-    project: 'Atlas Rollout',
-    role: 'QA Engineer',
-    percent: 40,
-    from: -20,
-    to: 60,
-  },
-  {
-    employee: 'Ines Ruiz',
-    project: 'Atlas Rollout',
-    role: 'QA Engineer',
-    percent: 30,
-    from: -20,
-    to: 60,
-  },
-  {
-    employee: 'Ben Carter',
-    project: 'Beacon Migration',
-    role: 'Backend Developer',
-    percent: 80,
-    from: -45,
-    to: 45,
-  },
-  {
-    employee: 'Hugo Alves',
-    project: 'Beacon Migration',
-    role: 'Backend Developer',
-    percent: 50,
-    from: -5,
-    to: 100,
-  },
-  {
-    employee: 'Farid Haddad',
-    project: 'Beacon Migration',
-    role: 'Tech Lead',
-    percent: 30,
-    from: -15,
-    to: 75,
-  },
-  {
-    employee: 'Elif Demir',
-    project: 'Delta Reporting',
-    role: 'Data Engineer',
-    percent: 50,
-    from: -60,
-    to: -10,
-  },
-  {
-    employee: 'Dara Novak',
-    project: 'Compass Redesign',
-    role: 'Designer',
-    percent: 50,
-    from: 20,
-    to: 140,
-  },
-  {
-    employee: 'Farid Haddad',
-    project: 'Atlas Rollout',
-    role: 'Frontend Developer',
-    percent: 60,
-    from: -15,
-    to: 75,
-  },
-];
+function commitmentOf(slug: string): number {
+  return (
+    OVERLOADED.get(slug) ?? PART_TIME.get(slug) ?? LIGHTLY_COMMITTED.get(slug) ?? TOTAL_COMMITMENT
+  );
+}
 
-// A handover that already happened, so replacement history is readable without performing one
-// first (Constitution X, FR-051). Both halves are in the past, which keeps it out of today's
-// utilization figures. The dates adjoin exactly: Chen ends the day before Ines begins (FR-046).
-const COMPLETED_HANDOVER = {
-  project: 'Echo Launch',
-  role: 'QA Engineer',
-  percent: 25,
-  outgoing: { employee: 'Chen Wei', from: -120, to: -76 },
-  incoming: { employee: 'Ines Ruiz', from: -75, to: -30 },
-  effective: -75,
-};
+// An even division that still adds up: the remainder goes to the first few teams rather than
+// being lost to rounding, so three teams on a full week read 34, 33, 33.
+function evenSplit(total: number, parts: number): number[] {
+  const base = Math.floor(total / parts);
+  const remainder = total - base * parts;
+  return Array.from({ length: parts }, (_unused, index) => base + (index < remainder ? 1 : 0));
+}
+
+function windowFor(slug: string): { startDate: string; endDate: string } {
+  if (ENDED_LAST_MONTH.has(slug)) return { startDate: shift(-90), endDate: shift(-20) };
+  if (STARTS_NEXT_MONTH.has(slug)) return { startDate: shift(20), endDate: shift(180) };
+  return { startDate: shift(-60), endDate: shift(120) };
+}
 
 async function main() {
   const passwordHash = await argon2.hash('teamflow-dev');
-
   for (const user of USERS) {
     await prisma.user.upsert({
       where: { email: user.email },
@@ -268,11 +73,15 @@ async function main() {
     });
   }
 
-  for (const name of SKILLS) {
+  const skillNames = [...new Set(TEAM_PROJECTS.map((project) => project.skill))].sort();
+  const roleNames = [
+    ...new Set(TEAM_PROJECTS.flatMap((project) => project.members.map((member) => member.role))),
+  ].sort();
+
+  for (const name of skillNames) {
     await prisma.skill.upsert({ where: { name }, update: {}, create: { name } });
   }
-
-  for (const name of ROLES) {
+  for (const name of roleNames) {
     await prisma.role.upsert({ where: { name }, update: {}, create: { name } });
   }
 
@@ -280,104 +89,93 @@ async function main() {
   const roleIds = new Map((await prisma.role.findMany()).map((r) => [r.name, r.id]));
   const admin = await prisma.user.findUniqueOrThrow({ where: { email: 'admin@example.com' } });
 
-  // The demo register is replaced rather than added to, so the seed can be re-run and always
-  // leaves the same populated state behind. Accounts and catalogues are kept.
-  process.stdout.write('Replacing demo employees, projects, and assignments...\n');
+  process.stdout.write('Replacing employees, projects, and assignments with the team export...\n');
   await prisma.replacement.deleteMany();
   await prisma.assignment.deleteMany();
   await prisma.roleRequirement.deleteMany();
   await prisma.project.deleteMany();
   await prisma.employee.deleteMany();
 
+  // Nothing references a skill or a role once the register above is gone, so any catalogue entry
+  // the export does not name is a leftover from an earlier seed and goes with it.
+  const staleSkills = await prisma.skill.deleteMany({ where: { name: { notIn: skillNames } } });
+  const staleRoles = await prisma.role.deleteMany({ where: { name: { notIn: roleNames } } });
+  if (staleSkills.count + staleRoles.count > 0) {
+    process.stdout.write(
+      `Removed ${staleSkills.count} skill and ${staleRoles.count} role entries the export does not name.\n`,
+    );
+  }
+
+  // Somebody holds the skill of every team they are on, at 3 out of 5. The export states no
+  // proficiency, and inventing differences between named colleagues would be fabricating it.
+  const teamsOf = (slug: string) =>
+    TEAM_PROJECTS.filter((project) => project.members.some((member) => member.slug === slug));
+
   const employeeIds = new Map<string, string>();
-  for (const seed of EMPLOYEES) {
+  for (const person of PEOPLE) {
+    const held = [...new Set(teamsOf(person.slug).map((project) => project.skill))].sort();
     const created = await prisma.employee.create({
       data: {
-        name: seed.name,
-        roleTitle: seed.roleTitle,
-        totalCapacityPercent: seed.totalCapacityPercent ?? 100,
+        name: person.name,
+        roleTitle: person.roleTitle,
+        totalCapacityPercent: 100,
+        avatarUrl: person.avatarUrl,
         skills: {
-          set: seed.skills.map(([skillName, rating]) => ({
-            skillId: required(skillIds, skillName, 'skill'),
-            rating,
-          })),
+          set: held.map((skill) => ({ skillId: required(skillIds, skill, 'skill'), rating: 3 })),
         },
       },
     });
-    employeeIds.set(seed.name, created.id);
+    employeeIds.set(person.slug, created.id);
   }
 
   const projectIds = new Map<string, string>();
-  for (const seed of PROJECTS) {
+  for (const project of TEAM_PROJECTS) {
     const created = await prisma.project.create({
-      data: { name: seed.name, status: seed.status },
+      data: { name: project.name, status: project.status as ProjectStatus },
     });
-    projectIds.set(seed.name, created.id);
+    projectIds.set(project.name, created.id);
 
-    for (const [roleName, skillName, headcount] of seed.requirements) {
+    // A team requires exactly the roles its people actually fill, at the headcount that fills
+    // them, so the export describes a fully staffed organisation rather than an arbitrary one.
+    const headcounts = new Map<string, number>();
+    for (const member of project.members) {
+      headcounts.set(member.role, (headcounts.get(member.role) ?? 0) + 1);
+    }
+    for (const [role, headcount] of [...headcounts].sort()) {
       await prisma.roleRequirement.create({
         data: {
           projectId: created.id,
-          roleId: required(roleIds, roleName, 'role'),
-          requiredSkillId: required(skillIds, skillName, 'skill'),
+          roleId: required(roleIds, role, 'role'),
+          requiredSkillId: required(skillIds, project.skill, 'skill'),
           headcount,
         },
       });
     }
   }
 
-  for (const seed of ASSIGNMENTS) {
-    await prisma.assignment.create({
-      data: {
-        employeeId: required(employeeIds, seed.employee, 'employee'),
-        projectId: required(projectIds, seed.project, 'project'),
-        roleId: required(roleIds, seed.role, 'role'),
-        allocationPercent: seed.percent,
-        startDate: shift(seed.from),
-        endDate: shift(seed.to),
-        createdByUserId: admin.id,
-        updatedByUserId: admin.id,
-      },
-    });
+  for (const person of PEOPLE) {
+    const teams = teamsOf(person.slug);
+    if (teams.length === 0) continue;
+
+    const shares = evenSplit(commitmentOf(person.slug), teams.length);
+    const dates = windowFor(person.slug);
+
+    for (const [index, project] of teams.entries()) {
+      const member = project.members.find((entry) => entry.slug === person.slug);
+      await prisma.assignment.create({
+        data: {
+          employeeId: required(employeeIds, person.slug, 'employee'),
+          projectId: required(projectIds, project.name, 'project'),
+          roleId: required(roleIds, member?.role ?? project.role, 'role'),
+          allocationPercent: shares[index] as number,
+          startDate: dates.startDate,
+          endDate: dates.endDate,
+          createdByUserId: admin.id,
+          updatedByUserId: admin.id,
+        },
+      });
+    }
   }
-
-  const handover = COMPLETED_HANDOVER;
-  const outgoing = await prisma.assignment.create({
-    data: {
-      employeeId: required(employeeIds, handover.outgoing.employee, 'employee'),
-      projectId: required(projectIds, handover.project, 'project'),
-      roleId: required(roleIds, handover.role, 'role'),
-      allocationPercent: handover.percent,
-      startDate: shift(handover.outgoing.from),
-      endDate: shift(handover.outgoing.to),
-      createdByUserId: admin.id,
-      updatedByUserId: admin.id,
-    },
-  });
-
-  const incoming = await prisma.assignment.create({
-    data: {
-      employeeId: required(employeeIds, handover.incoming.employee, 'employee'),
-      projectId: required(projectIds, handover.project, 'project'),
-      roleId: required(roleIds, handover.role, 'role'),
-      allocationPercent: handover.percent,
-      startDate: shift(handover.incoming.from),
-      endDate: shift(handover.incoming.to),
-      predecessorAssignmentId: outgoing.id,
-      createdByUserId: admin.id,
-      updatedByUserId: admin.id,
-    },
-  });
-
-  await prisma.replacement.create({
-    data: {
-      outgoingAssignmentId: outgoing.id,
-      incomingAssignmentId: incoming.id,
-      outgoingEmployeeId: outgoing.employeeId,
-      effectiveDate: shift(handover.effective),
-      performedByUserId: admin.id,
-    },
-  });
 
   const counts = {
     users: await prisma.user.count(),
@@ -387,10 +185,14 @@ async function main() {
     projects: await prisma.project.count(),
     requirements: await prisma.roleRequirement.count(),
     assignments: await prisma.assignment.count(),
-    replacements: await prisma.replacement.count(),
   };
 
+  const withoutPortrait = PEOPLE.filter((person) => person.avatarUrl === null).map((p) => p.name);
+
   process.stdout.write(`Seeded: ${JSON.stringify(counts)}\n`);
+  if (withoutPortrait.length > 0) {
+    process.stdout.write(`No portrait, shown as initials: ${withoutPortrait.join(', ')}\n`);
+  }
   process.stdout.write('Sign in as admin@example.com or pm@example.com, password teamflow-dev\n');
 }
 

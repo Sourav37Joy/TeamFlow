@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import AssignmentForm from '../../../components/AssignmentForm';
+import Avatar from '../../../components/Avatar';
 import EmptyState from '../../../components/EmptyState';
 import LoadLabel from '../../../components/LoadLabel';
 import ReplacementDialog from '../../../components/ReplacementDialog';
@@ -89,11 +90,14 @@ export default function EmployeeRecordPage() {
   return (
     <section>
       <header className="page-head">
-        <div>
-          <h2>{employee.name}</h2>
-          <p className="muted">
-            {employee.roleTitle} &middot; capacity {employee.totalCapacityPercent}%
-          </p>
+        <div className="person-head">
+          <Avatar name={employee.name} avatarUrl={employee.avatarUrl} size={72} />
+          <div>
+            <h2>{employee.name}</h2>
+            <p className="muted">
+              {employee.roleTitle} &middot; capacity {employee.totalCapacityPercent}%
+            </p>
+          </div>
         </div>
         <Link href="/employees">Back to people</Link>
       </header>

@@ -12,6 +12,7 @@ import {
   ReplacementShortlist,
   Warning,
 } from '../lib/api';
+import Avatar from './Avatar';
 import CandidateList from './CandidateList';
 import WarningDialog from './WarningDialog';
 
@@ -82,7 +83,14 @@ export default function ReplacementDialog({ assignment, employees, onDone, onCan
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label="Replace a person">
       <div className="dialog wide">
-        <h3>Replace {assignment.employeeName}</h3>
+        <h3 className="group-person">
+          <Avatar
+            name={assignment.employeeName}
+            avatarUrl={assignment.employeeAvatarUrl}
+            size={40}
+          />
+          <span>Replace {assignment.employeeName}</span>
+        </h3>
         <p className="muted">
           {assignment.projectName} &middot; {assignment.roleName} &middot;{' '}
           {assignment.allocationPercent}% &middot; {assignment.startDate} to {assignment.endDate}

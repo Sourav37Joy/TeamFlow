@@ -2,11 +2,15 @@ import { Candidate, shortlist } from '../calc/candidates';
 import { CalendarDate } from '../calc/dates';
 import { PrismaService } from '../prisma.service';
 
+export interface CandidateRow extends Candidate {
+  avatarUrl: string | null;
+}
+
 export interface Shortlisted {
   asOf: CalendarDate;
   requiredSkillId: string;
   requiredSkillName: string;
-  candidates: Candidate[];
+  candidates: CandidateRow[];
   reason: string | null;
   message: string | null;
 }
@@ -32,11 +36,18 @@ export async function shortlistFor(
   const skillName = skill?.name ?? 'the required skill';
   const result = shortlist(employees, assignments, query, asOf);
 
+  // The score comes from calc, which deals only in numbers; the face is attached here so a
+  // shortlist row looks like the person it is recommending.
+  const portraits = new Map(employees.map((employee) => [employee.id, employee.avatarUrl]));
+
   return {
     asOf,
     requiredSkillId: query.requiredSkillId,
     requiredSkillName: skillName,
-    candidates: result.candidates,
+    candidates: result.candidates.map((candidate) => ({
+      ...candidate,
+      avatarUrl: portraits.get(candidate.employeeId) ?? null,
+    })),
     reason: result.reason,
     // An empty shortlist explains itself instead of looking like a failed search
     // (FR-058, FR-059).

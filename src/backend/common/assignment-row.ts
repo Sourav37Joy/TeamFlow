@@ -1,11 +1,12 @@
 import { Assignment } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
-import { nameIndex, unique } from './fields';
+import { nameIndex, PersonLabel, personIndex, unique } from './fields';
 
 export interface AssignmentRow {
   id: string;
   employeeId: string;
   employeeName: string;
+  employeeAvatarUrl: string | null;
   projectId: string;
   projectName: string;
   roleId: string;
@@ -18,7 +19,7 @@ export interface AssignmentRow {
 }
 
 export interface NameIndexes {
-  employeeNames: Map<string, string>;
+  employees: Map<string, PersonLabel>;
   projectNames: Map<string, string>;
   roleNames: Map<string, string>;
 }
@@ -29,20 +30,24 @@ const UNKNOWN = 'Unknown';
 // records rather than per row (D-11). Every screen reads the same shape, from the employee
 // side and the project side alike (FR-024).
 export function toRows(assignments: Assignment[], names: NameIndexes): AssignmentRow[] {
-  return assignments.map((assignment) => ({
-    id: assignment.id,
-    employeeId: assignment.employeeId,
-    employeeName: names.employeeNames.get(assignment.employeeId) ?? UNKNOWN,
-    projectId: assignment.projectId,
-    projectName: names.projectNames.get(assignment.projectId) ?? UNKNOWN,
-    roleId: assignment.roleId,
-    roleName: names.roleNames.get(assignment.roleId) ?? UNKNOWN,
-    allocationPercent: assignment.allocationPercent,
-    startDate: assignment.startDate,
-    endDate: assignment.endDate,
-    createdAt: assignment.createdAt,
-    updatedAt: assignment.updatedAt,
-  }));
+  return assignments.map((assignment) => {
+    const employee = names.employees.get(assignment.employeeId);
+    return {
+      id: assignment.id,
+      employeeId: assignment.employeeId,
+      employeeName: employee?.name ?? UNKNOWN,
+      employeeAvatarUrl: employee?.avatarUrl ?? null,
+      projectId: assignment.projectId,
+      projectName: names.projectNames.get(assignment.projectId) ?? UNKNOWN,
+      roleId: assignment.roleId,
+      roleName: names.roleNames.get(assignment.roleId) ?? UNKNOWN,
+      allocationPercent: assignment.allocationPercent,
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+      createdAt: assignment.createdAt,
+      updatedAt: assignment.updatedAt,
+    };
+  });
 }
 
 export async function assignmentRows(
@@ -54,7 +59,7 @@ export async function assignmentRows(
   const [employees, projects, roles] = await Promise.all([
     prisma.employee.findMany({
       where: { id: { in: unique(assignments.map((a) => a.employeeId)) } },
-      select: { id: true, name: true },
+      select: { id: true, name: true, avatarUrl: true },
     }),
     prisma.project.findMany({
       where: { id: { in: unique(assignments.map((a) => a.projectId)) } },
@@ -67,7 +72,7 @@ export async function assignmentRows(
   ]);
 
   return toRows(assignments, {
-    employeeNames: nameIndex(employees),
+    employees: personIndex(employees),
     projectNames: nameIndex(projects),
     roleNames: nameIndex(roles),
   });

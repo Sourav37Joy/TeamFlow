@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import AssignmentForm from '../../../components/AssignmentForm';
+import Avatar from '../../../components/Avatar';
 import CandidateList from '../../../components/CandidateList';
 import EmptyState from '../../../components/EmptyState';
+import PersonLink from '../../../components/PersonLink';
 import ReplacementDialog from '../../../components/ReplacementDialog';
 import {
   ApiFailure,
@@ -199,7 +201,12 @@ export default function ProjectRecordPage() {
                       <span className="muted">Nobody</span>
                     ) : (
                       requirement.fillers.map((filler) => (
-                        <span key={filler.assignmentId} className="pill">
+                        <span key={filler.assignmentId} className="filler">
+                          <Avatar
+                            name={filler.employeeName}
+                            avatarUrl={filler.employeeAvatarUrl}
+                            size={24}
+                          />
                           <Link href={`/employees/${filler.employeeId}`}>
                             {filler.employeeName}
                           </Link>{' '}
@@ -275,7 +282,12 @@ export default function ProjectRecordPage() {
                     <td>{unrequested.headcount}</td>
                     <td>
                       {unrequested.fillers.map((filler) => (
-                        <span key={filler.assignmentId} className="pill">
+                        <span key={filler.assignmentId} className="filler">
+                          <Avatar
+                            name={filler.employeeName}
+                            avatarUrl={filler.employeeAvatarUrl}
+                            size={24}
+                          />
                           <Link href={`/employees/${filler.employeeId}`}>
                             {filler.employeeName}
                           </Link>{' '}
@@ -317,9 +329,12 @@ export default function ProjectRecordPage() {
               {project.assignments.map((assignment) => (
                 <tr key={assignment.id}>
                   <td>
-                    <Link href={`/employees/${assignment.employeeId}`}>
-                      {assignment.employeeName}
-                    </Link>
+                    <PersonLink
+                      id={assignment.employeeId}
+                      name={assignment.employeeName}
+                      avatarUrl={assignment.employeeAvatarUrl}
+                      size={28}
+                    />
                   </td>
                   <td>{assignment.roleName}</td>
                   <td>{assignment.allocationPercent}%</td>

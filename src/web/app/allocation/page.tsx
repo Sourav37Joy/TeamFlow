@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import Avatar from '../../components/Avatar';
 import EmptyState from '../../components/EmptyState';
 import LoadLabel from '../../components/LoadLabel';
+import PersonLink from '../../components/PersonLink';
 import {
   AllocationOverview,
   allocationOverview,
@@ -151,9 +153,12 @@ export default function AllocationPage() {
             group.kind === 'person' ? (
               <div key={group.id} className="card panel">
                 <div className="group-head">
-                  <h3>
-                    <Link href={`/employees/${group.id}`}>{group.name}</Link>{' '}
-                    <span className="muted">{group.roleTitle}</span>
+                  <h3 className="group-person">
+                    <Avatar name={group.name} avatarUrl={group.avatarUrl} size={40} />
+                    <span>
+                      <Link href={`/employees/${group.id}`}>{group.name}</Link>{' '}
+                      <span className="muted">{group.roleTitle}</span>
+                    </span>
                   </h3>
                   <div>
                     <LoadLabel
@@ -214,7 +219,12 @@ function RowTable({
           <tr key={row.id}>
             {hide === 'employee' ? null : (
               <td>
-                <Link href={`/employees/${row.employeeId}`}>{row.employeeName}</Link>
+                <PersonLink
+                  id={row.employeeId}
+                  name={row.employeeName}
+                  avatarUrl={row.employeeAvatarUrl}
+                  size={28}
+                />
               </td>
             )}
             {hide === 'project' ? null : (

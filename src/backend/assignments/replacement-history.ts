@@ -1,5 +1,5 @@
 import { Assignment, Replacement } from '@prisma/client';
-import { nameIndex, unique } from '../common/fields';
+import { nameIndex, personIndex, unique } from '../common/fields';
 import { PrismaService } from '../prisma.service';
 
 export interface ReplacementHistoryRow {
@@ -7,8 +7,10 @@ export interface ReplacementHistoryRow {
   effectiveDate: string;
   outgoingEmployeeId: string;
   outgoingEmployeeName: string;
+  outgoingEmployeeAvatarUrl: string | null;
   incomingEmployeeId: string | null;
   incomingEmployeeName: string | null;
+  incomingEmployeeAvatarUrl: string | null;
   projectName: string | null;
   roleName: string | null;
   performedByUserId: string;
@@ -73,7 +75,7 @@ async function historyRows(
           ]),
         },
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, avatarUrl: true },
     }),
     prisma.project.findMany({
       where: { id: { in: unique(incomingAssignments.map((a) => a.projectId)) } },
@@ -89,7 +91,7 @@ async function historyRows(
     }),
   ]);
 
-  const employeeNames = nameIndex(employees);
+  const employeeLabels = personIndex(employees);
   const projectNames = nameIndex(projects);
   const roleNames = nameIndex(roles);
   const userNames = new Map(users.map((user) => [user.id, user.displayName]));
@@ -105,9 +107,16 @@ async function historyRows(
         id: replacement.id,
         effectiveDate: replacement.effectiveDate,
         outgoingEmployeeId: replacement.outgoingEmployeeId,
-        outgoingEmployeeName: employeeNames.get(replacement.outgoingEmployeeId) ?? UNKNOWN,
+        outgoingEmployeeName: employeeLabels.get(replacement.outgoingEmployeeId)?.name ?? UNKNOWN,
+        outgoingEmployeeAvatarUrl:
+          employeeLabels.get(replacement.outgoingEmployeeId)?.avatarUrl ?? null,
         incomingEmployeeId: incoming?.employeeId ?? null,
-        incomingEmployeeName: incoming ? (employeeNames.get(incoming.employeeId) ?? UNKNOWN) : null,
+        incomingEmployeeName: incoming
+          ? (employeeLabels.get(incoming.employeeId)?.name ?? UNKNOWN)
+          : null,
+        incomingEmployeeAvatarUrl: incoming
+          ? (employeeLabels.get(incoming.employeeId)?.avatarUrl ?? null)
+          : null,
         projectName: incoming ? (projectNames.get(incoming.projectId) ?? UNKNOWN) : null,
         roleName: incoming ? (roleNames.get(incoming.roleId) ?? UNKNOWN) : null,
         performedByUserId: replacement.performedByUserId,

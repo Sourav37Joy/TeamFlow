@@ -176,6 +176,7 @@ export interface EmployeeRow extends Load {
   name: string;
   roleTitle: string;
   totalCapacityPercent: number;
+  avatarUrl: string | null;
   skills: RatedSkill[];
 }
 
@@ -245,6 +246,7 @@ export interface RequirementRow {
 export interface FillerRow {
   employeeId: string;
   employeeName: string;
+  employeeAvatarUrl: string | null;
   allocationPercent: number;
   assignmentId: string;
 }
@@ -335,6 +337,7 @@ export interface AssignmentRow {
   id: string;
   employeeId: string;
   employeeName: string;
+  employeeAvatarUrl: string | null;
   projectId: string;
   projectName: string;
   roleId: string;
@@ -381,8 +384,10 @@ export interface ReplacementHistoryRow {
   effectiveDate: string;
   outgoingEmployeeId: string;
   outgoingEmployeeName: string;
+  outgoingEmployeeAvatarUrl: string | null;
   incomingEmployeeId: string | null;
   incomingEmployeeName: string | null;
+  incomingEmployeeAvatarUrl: string | null;
   projectName: string | null;
   roleName: string | null;
   performedByUserId: string;
@@ -423,6 +428,7 @@ export const replaceOnAssignment = (id: string, body: ReplacementInput, dryRun =
 export interface Candidate {
   employeeId: string;
   name: string;
+  avatarUrl: string | null;
   skillRating: number;
   skillComponent: number;
   capacityComponent: number;
@@ -465,6 +471,7 @@ export interface PersonGroup {
   kind: 'person';
   id: string;
   name: string;
+  avatarUrl: string | null;
   roleTitle: string;
   totalCommittedPercent: number;
   remainingCapacityPercent: number;
@@ -502,6 +509,7 @@ export const allocationOverview = (
 export interface OverallocatedEntry {
   employeeId: string;
   name: string;
+  avatarUrl: string | null;
   roleTitle: string;
   utilizationPercent: number;
   totalCapacityPercent: number;
@@ -512,6 +520,7 @@ export interface OverallocatedEntry {
 export interface AvailableEntry {
   employeeId: string;
   name: string;
+  avatarUrl: string | null;
   roleTitle: string;
   remainingCapacityPercent: number;
   utilizationPercent: number;

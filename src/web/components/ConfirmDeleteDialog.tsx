@@ -1,6 +1,7 @@
 'use client';
 
 import { AssignmentRow } from '../lib/api';
+import Avatar from './Avatar';
 
 interface Props {
   title: string;
@@ -40,7 +41,16 @@ export default function ConfirmDeleteDialog({
             <tbody>
               {wouldRemove.map((assignment) => (
                 <tr key={assignment.id}>
-                  <td>{assignment.employeeName}</td>
+                  <td>
+                    <span className="person">
+                      <Avatar
+                        name={assignment.employeeName}
+                        avatarUrl={assignment.employeeAvatarUrl}
+                        size={24}
+                      />
+                      {assignment.employeeName}
+                    </span>
+                  </td>
                   <td>{assignment.projectName}</td>
                   <td>{assignment.roleName}</td>
                   <td>{assignment.allocationPercent}%</td>

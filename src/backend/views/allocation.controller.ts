@@ -4,13 +4,14 @@ import { CalendarDate } from '../calc/dates';
 import { activeAssignments, activeHeadcount, utilizationForAll } from '../calc/utilization';
 import { resolveAsOf } from '../common/as-of';
 import { AssignmentRow, NameIndexes, toRows } from '../common/assignment-row';
-import { nameIndex, requireObjectId } from '../common/fields';
+import { nameIndex, personIndex, requireObjectId } from '../common/fields';
 import { PrismaService } from '../prisma.service';
 
 export interface PersonGroup {
   kind: 'person';
   id: string;
   name: string;
+  avatarUrl: string | null;
   roleTitle: string;
   totalCommittedPercent: number;
   remainingCapacityPercent: number;
@@ -51,8 +52,8 @@ export class AllocationController {
       this.prisma.role.findMany(),
     ]);
 
-    const names = {
-      employeeNames: nameIndex(employees),
+    const names: NameIndexes = {
+      employees: personIndex(employees),
       projectNames: nameIndex(projects),
       roleNames: nameIndex(roles),
     };
@@ -109,6 +110,7 @@ export class AllocationController {
             kind: 'person' as const,
             id: employee.id,
             name: employee.name,
+            avatarUrl: employee.avatarUrl,
             roleTitle: employee.roleTitle,
             totalCommittedPercent: utilization.utilizationPercent,
             remainingCapacityPercent: utilization.remainingCapacityPercent,
@@ -174,7 +176,7 @@ function matches(
   if (!term) return true;
 
   const haystack = [
-    names.employeeNames.get(assignment.employeeId),
+    names.employees.get(assignment.employeeId)?.name,
     names.projectNames.get(assignment.projectId),
     names.roleNames.get(assignment.roleId),
   ]

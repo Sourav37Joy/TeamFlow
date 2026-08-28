@@ -16,10 +16,18 @@ npm install
 cp .env.example .env
 docker compose up -d           # MongoDB 7, replica set rs0, on port 27018
 npm run db:push                # applies the schema and its indexes
-npm run seed                   # the demo organisation
+npm run seed                   # the imported organisation
 ```
 
-**`npm run seed` is re-runnable and replaces the demo register.** It deletes the demo employees, projects, role requirements, and assignments, then rewrites them, so the same populated state is always what you get. The two accounts and the skill and role catalogues are upserted, not deleted. Anything you created yourself while exploring goes with the demo data - re-run it deliberately, not out of habit.
+**`npm run seed` is re-runnable and replaces the register.** It deletes every employee, project, role requirement, and assignment, then rewrites them from `seed/team-data.ts`, so the same populated state is always what you get. Catalogue entries the team data does not name are removed with it; the two sign-in accounts are kept. Anything you created yourself while exploring goes too - re-run it deliberately, not out of habit.
+
+**The seed is the real organisation**, imported from the "Team Members Profiles" export: 42 people across 15 teams, from 55 photographs. `seed/team-data.ts` and the avatars under `src/web/public/avatars` are generated, not hand-written:
+
+```bash
+npm run seed:import -- "C:/path/to/Team Members Profiles"
+```
+
+Nothing outside the repository is needed to seed - only to re-import. Restart `npm run dev` after an import, because the avatar files live inside the tree the Next.js dev server watches.
 
 **Port 27018, not 27017.** A locally installed MongoDB service often already owns 27017 as a standalone, and Prisma needs a replica set for `$transaction`, which the replacement handover depends on. Pointing at a standalone fails with `replicaSet name "rs0" does not match actual name <none>`.
 
@@ -52,9 +60,9 @@ Seven checks, one per story in scope. Each is independently checkable and the se
 
 ### V1 - Projects, people, and assignments (US1)
 
-1. Sign in as the Administrator. Create a project requiring 2 Frontend Developers (skill React) and 1 QA Engineer (skill Test Automation).
-2. Create an employee with skills React 4 and Node.js 3.
-3. From the project, fill the Frontend Developer gap - confirm the role arrives pre-filled and the assignment shows on both the project and the employee.
+1. Sign in as the Administrator. Create a project requiring 2 Software Engineers (skill Application Development) and 1 Site Reliability Engineer (skill Site Reliability).
+2. Create an employee with two rated skills, say Application Development 4 and Agentic AI 3. Add a skill that is not in the catalogue while you are there - it should appear and be selected, not blocked (FR-083).
+3. From the project, fill the Software Engineer gap - confirm the role arrives pre-filled and the assignment shows on both the project and the employee.
 4. Create a second assignment from the employee's record instead; confirm it appears identically on the project.
 5. Try an end date before the start date, then an allocation of 0 - both refused, naming the field and its permitted range, nothing stored.
 6. Sign in as the Project Manager and try to create an employee - refused, naming the action and that Administrator is required (FR-085).
@@ -78,22 +86,22 @@ Seven checks, one per story in scope. Each is independently checkable and the se
 
 ### V4 - Understaffed projects (US4)
 
-1. A project requiring 3 Backend Developers with 1 assigned reads 1 of 3, shortfall 2, `Understaffed`.
+1. A project requiring 3 of a role with 1 assigned reads 1 of 3, shortfall 2, `Understaffed`.
 2. Assign 2 more - reads 3 of 3, `Fully staffed`.
 3. Over-assign a 1-person role - flagged overstaffed by 1.
 4. Move the evaluation date past an assignment's end - the shortfall reappears with no manual action.
 5. A project with no requirements reads `No requirements declared`, not fully staffed.
-6. **The seeded Completed and Cancelled projects never appear in the dashboard gaps panel** (FR-075).
+6. **A project that is not Planned or Active never appears in the dashboard gaps panel** (FR-075). Every team in the imported organisation is Active, because the export states no lifecycle, so set one to On hold, Completed, or Cancelled to check this: its shortfall stays readable on the project and drops out of the gaps panel.
 
 ### V5 - Replace someone on an assignment (US5)
 
-1. Take Priya's 50% Frontend Developer assignment on Atlas Migration running to 2026-12-31. Replace her with Sam effective 2026-10-01.
-2. Priya's commitment now ends 2026-09-30; Sam holds the same role at 50% from 2026-10-01 to 2026-12-31.
-3. **Check the project's Frontend Developer headcount on 2026-09-30 and again on 2026-10-01 - it must be 1 on both.** This is SC-007, the single most important check in the walkthrough, and the reason the operation runs in a transaction.
+1. Open Ajentica Lumistry and take Rubel's 40% Software Engineer assignment. Replace him with somebody not already on that project in that role - Grace or Ines will do - effective a date inside the assignment's range.
+2. Rubel's commitment now ends the day before the handover; the incoming person holds the same role at 40% from the handover date to the original end date.
+3. **Check the project's Software Engineer headcount on the day before the handover and again on the day of it - it must be the same on both.** This is SC-007, the single most important check in the walkthrough, and the reason the operation runs in a transaction.
 4. Adjust the incoming percentage mid-swap - only the incoming assignment changes.
 5. Attempt a swap that pushes the incoming person over capacity - warned with the resulting total, and allowed to proceed deliberately (Constitution VIII).
 6. Attempt: replacing someone with themselves; someone already on that project and role; an effective date outside the range; an assignment that already ended. All four refused with the codes in [contracts/errors.md](./contracts/errors.md).
-7. Replacement history readable from the assignment, from Priya, and from Sam - naming both people, the effective date, and who performed it.
+7. Replacement history readable from the assignment and from both people's records - naming both of them, the effective date, and who performed it.
 8. Replace the same commitment again - history appends rather than overwrites.
 9. Cancel a replacement mid-flow - nothing changed for either person or the project.
 

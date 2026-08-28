@@ -37,6 +37,21 @@ export function nameIndex(records: Array<{ id: string; name: string }>): Map<str
   return new Map(records.map((record) => [record.id, record.name]));
 }
 
+export interface PersonLabel {
+  name: string;
+  avatarUrl: string | null;
+}
+
+// A person's name and their portrait travel together, so every screen that can name somebody
+// can also show their face without a second lookup of its own.
+export function personIndex(
+  records: Array<{ id: string; name: string; avatarUrl: string | null }>,
+): Map<string, PersonLabel> {
+  return new Map(
+    records.map((record) => [record.id, { name: record.name, avatarUrl: record.avatarUrl }]),
+  );
+}
+
 export function unique(ids: string[]): string[] {
   return [...new Set(ids)];
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import EmptyState from '../../components/EmptyState';
 import LoadLabel from '../../components/LoadLabel';
+import PersonLink from '../../components/PersonLink';
 import { Dashboard, failureText, PROJECT_STATUS_TEXT, readDashboard } from '../../lib/api';
 import { useSession } from '../../lib/use-session';
 
@@ -70,9 +71,13 @@ export default function DashboardPage() {
                   {dashboard.overallocated.entries.map((entry) => (
                     <tr key={entry.employeeId}>
                       <td>
-                        <Link href={`/employees/${entry.employeeId}`}>{entry.name}</Link>
-                        <br />
-                        <span className="muted">{entry.roleTitle}</span>
+                        <PersonLink
+                          id={entry.employeeId}
+                          name={entry.name}
+                          avatarUrl={entry.avatarUrl}
+                          subtitle={entry.roleTitle}
+                          size={32}
+                        />
                       </td>
                       <td>
                         <LoadLabel
@@ -110,9 +115,13 @@ export default function DashboardPage() {
                   {dashboard.available.entries.map((entry) => (
                     <tr key={entry.employeeId}>
                       <td>
-                        <Link href={`/employees/${entry.employeeId}`}>{entry.name}</Link>
-                        <br />
-                        <span className="muted">{entry.roleTitle}</span>
+                        <PersonLink
+                          id={entry.employeeId}
+                          name={entry.name}
+                          avatarUrl={entry.avatarUrl}
+                          subtitle={entry.roleTitle}
+                          size={32}
+                        />
                       </td>
                       <td>
                         <strong>{entry.remainingCapacityPercent}%</strong>

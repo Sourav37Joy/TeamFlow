@@ -1,4 +1,5 @@
 import { ReplacementHistoryRow } from '../lib/api';
+import Avatar from './Avatar';
 
 interface Props {
   history: ReplacementHistoryRow[];
@@ -25,8 +26,30 @@ export default function ReplacementHistory({ history, emptyText }: Props) {
         {history.map((entry) => (
           <tr key={entry.id}>
             <td>{entry.effectiveDate}</td>
-            <td>{entry.outgoingEmployeeName}</td>
-            <td>{entry.incomingEmployeeName ?? <span className="muted">Record removed</span>}</td>
+            <td>
+              <span className="person">
+                <Avatar
+                  name={entry.outgoingEmployeeName}
+                  avatarUrl={entry.outgoingEmployeeAvatarUrl}
+                  size={24}
+                />
+                {entry.outgoingEmployeeName}
+              </span>
+            </td>
+            <td>
+              {entry.incomingEmployeeName ? (
+                <span className="person">
+                  <Avatar
+                    name={entry.incomingEmployeeName}
+                    avatarUrl={entry.incomingEmployeeAvatarUrl}
+                    size={24}
+                  />
+                  {entry.incomingEmployeeName}
+                </span>
+              ) : (
+                <span className="muted">Record removed</span>
+              )}
+            </td>
             <td>
               {entry.projectName ? (
                 `${entry.projectName} - ${entry.roleName}`
