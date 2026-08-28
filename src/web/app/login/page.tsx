@@ -4,9 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { failureText, signIn } from '../../lib/api';
 
-// Signing in lands on projects, the first screen with something to do. The dashboard becomes
-// the landing route when User Story 8 builds it; Constitution I rules out a placeholder in
-// the meantime.
+// Signing in lands on the dashboard: who is over, who is free, and what is short are the
+// questions anybody opening the tool came to ask (FR-072).
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -20,7 +19,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await signIn(email, password);
-      router.replace('/projects');
+      router.replace('/dashboard');
     } catch (failure) {
       setError(failureText(failure));
       setBusy(false);

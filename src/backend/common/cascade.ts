@@ -6,7 +6,11 @@ type Tx = Prisma.TransactionClient;
 // MongoDB has no foreign keys, so every cascade runs in application code - and inside the
 // same transaction as the delete that triggered it, or a half-applied cascade could
 // survive a failure (D-12).
-async function detach(tx: Tx, assignmentIds: string[]): Promise<void> {
+//
+// A vanishing assignment must not leave a successor or a history record pointing at a hole.
+// The history itself is kept: it names both people, so it stays readable once its references
+// are gone, and a handover that happened is a fact worth keeping (FR-051).
+export async function detachAssignments(tx: Tx, assignmentIds: string[]): Promise<void> {
   await tx.assignment.updateMany({
     where: { predecessorAssignmentId: { in: assignmentIds } },
     data: { predecessorAssignmentId: null },
@@ -17,9 +21,10 @@ async function detach(tx: Tx, assignmentIds: string[]): Promise<void> {
     data: { outgoingAssignmentId: null },
   });
 
-  // A replacement's incoming reference is required, so a history record whose incoming
-  // assignment is gone is removed rather than left pointing at nothing.
-  await tx.replacement.deleteMany({ where: { incomingAssignmentId: { in: assignmentIds } } });
+  await tx.replacement.updateMany({
+    where: { incomingAssignmentId: { in: assignmentIds } },
+    data: { incomingAssignmentId: null },
+  });
 }
 
 export function deleteEmployeeWithAssignments(
@@ -28,7 +33,7 @@ export function deleteEmployeeWithAssignments(
   assignmentIds: string[],
 ): Promise<void> {
   return prisma.$transaction(async (tx) => {
-    await detach(tx, assignmentIds);
+    await detachAssignments(tx, assignmentIds);
     await tx.assignment.deleteMany({ where: { employeeId } });
     await tx.employee.delete({ where: { id: employeeId } });
   });
@@ -40,7 +45,7 @@ export function deleteProjectWithRequirementsAndAssignments(
   assignmentIds: string[],
 ): Promise<void> {
   return prisma.$transaction(async (tx) => {
-    await detach(tx, assignmentIds);
+    await detachAssignments(tx, assignmentIds);
     await tx.assignment.deleteMany({ where: { projectId } });
     await tx.roleRequirement.deleteMany({ where: { projectId } });
     await tx.project.delete({ where: { id: projectId } });
@@ -52,7 +57,7 @@ export function deleteAssignmentAndDetachSuccessors(
   assignmentId: string,
 ): Promise<void> {
   return prisma.$transaction(async (tx) => {
-    await detach(tx, [assignmentId]);
+    await detachAssignments(tx, [assignmentId]);
     await tx.assignment.delete({ where: { id: assignmentId } });
   });
 }

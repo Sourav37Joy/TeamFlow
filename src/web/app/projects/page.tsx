@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import AssignmentForm from '../../components/AssignmentForm';
+import CatalogueAdd from '../../components/CatalogueAdd';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
 import {
   addRequirement,
@@ -10,47 +11,39 @@ import {
   CatalogueEntry,
   createProject,
   deleteProject,
-  EmployeeRow,
   failureText,
-  listEmployees,
   listProjects,
   listRoles,
   listSkills,
+  PROJECT_STATUS_TEXT,
+  PROJECT_STATUSES,
   ProjectDetail,
   ProjectRow,
-  PROJECT_STATUSES,
   ProjectStatus,
   readProject,
   removeRequirement,
   RequirementInput,
+  STAFFING_STATUS_TEXT,
+  STAFFING_STATUSES,
   updateProject,
   updateRequirement,
 } from '../../lib/api';
 import { useSession } from '../../lib/use-session';
 
-const STATUS_LABELS: Record<ProjectStatus, string> = {
-  PLANNED: 'Planned',
-  ACTIVE: 'Active',
-  ON_HOLD: 'On hold',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-};
-
 export default function ProjectsPage() {
   const { user, loading } = useSession();
 
   const [projects, setProjects] = useState<ProjectRow[]>([]);
-  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [roles, setRoles] = useState<CatalogueEntry[]>([]);
   const [skills, setSkills] = useState<CatalogueEntry[]>([]);
 
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
+  const [staffingStatus, setStaffingStatus] = useState('');
 
-  const [detail, setDetail] = useState<ProjectDetail | null>(null);
+  const [declaring, setDeclaring] = useState<ProjectDetail | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ProjectRow | null>(null);
-  const [assigning, setAssigning] = useState<{ projectId: string; roleId?: string } | null>(null);
   const [confirming, setConfirming] = useState<{
     project: ProjectRow;
     message: string;
@@ -62,20 +55,19 @@ export default function ProjectsPage() {
 
   const load = useCallback(async () => {
     try {
-      const result = await listProjects({ q, status });
+      const result = await listProjects({ q, status, staffingStatus });
       setProjects(result.projects);
     } catch (failure) {
       setError(failureText(failure));
     }
-  }, [q, status]);
+  }, [q, status, staffingStatus]);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([listRoles(), listSkills(), listEmployees()])
-      .then(([roleList, skillList, employeeList]) => {
+    Promise.all([listRoles(), listSkills()])
+      .then(([roleList, skillList]) => {
         setRoles(roleList.roles);
         setSkills(skillList.skills);
-        setEmployees(employeeList.employees);
       })
       .catch((failure) => setError(failureText(failure)));
   }, [user]);
@@ -84,20 +76,16 @@ export default function ProjectsPage() {
     if (user) void load();
   }, [user, load]);
 
-  async function openDetail(project: ProjectRow) {
-    if (detail?.id === project.id) {
-      setDetail(null);
+  async function openDeclare(project: ProjectRow) {
+    if (declaring?.id === project.id) {
+      setDeclaring(null);
       return;
     }
     try {
-      setDetail(await readProject(project.id));
+      setDeclaring(await readProject(project.id));
     } catch (failure) {
       setError(failureText(failure));
     }
-  }
-
-  async function refreshDetail() {
-    if (detail) setDetail(await readProject(detail.id));
   }
 
   async function remove(project: ProjectRow, confirmed: boolean) {
@@ -106,7 +94,7 @@ export default function ProjectsPage() {
     try {
       await deleteProject(project.id, confirmed);
       setConfirming(null);
-      if (detail?.id === project.id) setDetail(null);
+      if (declaring?.id === project.id) setDeclaring(null);
       await load();
     } catch (failure) {
       if (failure instanceof ApiFailure && failure.error.code === 'CONFIRMATION_REQUIRED') {
@@ -163,7 +151,22 @@ export default function ProjectsPage() {
             <option value="">Any status</option>
             {PROJECT_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {STATUS_LABELS[value]}
+                {PROJECT_STATUS_TEXT[value]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="project-staffing">Staffing</label>
+          <select
+            id="project-staffing"
+            value={staffingStatus}
+            onChange={(event) => setStaffingStatus(event.target.value)}
+          >
+            <option value="">Any staffing</option>
+            {STAFFING_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {STAFFING_STATUS_TEXT[value]}
               </option>
             ))}
           </select>
@@ -183,22 +186,9 @@ export default function ProjectsPage() {
             setCreating(false);
             setEditing(null);
             await load();
-            await refreshDetail();
           }}
-        />
-      ) : null}
-
-      {assigning ? (
-        <AssignmentForm
-          employees={employees}
-          projects={projects}
-          roles={roles}
-          prefill={{ projectId: assigning.projectId, roleId: assigning.roleId }}
-          onCancel={() => setAssigning(null)}
-          onSaved={async () => {
-            setAssigning(null);
-            await refreshDetail();
-          }}
+          onRoleAdded={(entry) => setRoles((current) => merge(current, entry))}
+          onSkillAdded={(entry) => setSkills((current) => merge(current, entry))}
         />
       ) : null}
 
@@ -207,13 +197,14 @@ export default function ProjectsPage() {
           <tr>
             <th>Name</th>
             <th>Status</th>
+            <th>Staffing</th>
             <th />
           </tr>
         </thead>
         <tbody>
           {projects.length === 0 ? (
             <tr>
-              <td colSpan={3} className="muted">
+              <td colSpan={4} className="muted">
                 No projects match this search.
               </td>
             </tr>
@@ -221,16 +212,35 @@ export default function ProjectsPage() {
           {projects.map((project) => (
             <tr key={project.id}>
               <td>
-                <strong>{project.name}</strong>
+                <Link href={`/projects/${project.id}`}>
+                  <strong>{project.name}</strong>
+                </Link>
               </td>
               <td>
                 <span className={`status status-${project.status.toLowerCase()}`}>
-                  {STATUS_LABELS[project.status]}
+                  {PROJECT_STATUS_TEXT[project.status]}
                 </span>
               </td>
+              <td>
+                {STAFFING_STATUS_TEXT[project.staffingStatus]}
+                {project.totalShortfall > 0 ? (
+                  <>
+                    {' '}
+                    <span className="badge badge-overallocated">
+                      short {project.totalShortfall}
+                    </span>
+                  </>
+                ) : null}
+                {!project.producesGaps && project.totalShortfall > 0 ? (
+                  <>
+                    {' '}
+                    <span className="muted">not chased</span>
+                  </>
+                ) : null}
+              </td>
               <td className="row-actions">
-                <button type="button" className="link" onClick={() => void openDetail(project)}>
-                  {detail?.id === project.id ? 'Hide' : 'Roles and people'}
+                <button type="button" className="link" onClick={() => void openDeclare(project)}>
+                  {declaring?.id === project.id ? 'Hide roles' : 'Declared roles'}
                 </button>
                 <button
                   type="button"
@@ -255,13 +265,17 @@ export default function ProjectsPage() {
         </tbody>
       </table>
 
-      {detail ? (
-        <ProjectPanel
-          detail={detail}
+      {declaring ? (
+        <RequirementsPanel
+          detail={declaring}
           roles={roles}
           skills={skills}
-          onAssign={(roleId) => setAssigning({ projectId: detail.id, roleId })}
-          onChanged={refreshDetail}
+          onChanged={async () => {
+            setDeclaring(await readProject(declaring.id));
+            await load();
+          }}
+          onRoleAdded={(entry) => setRoles((current) => merge(current, entry))}
+          onSkillAdded={(entry) => setSkills((current) => merge(current, entry))}
         />
       ) : null}
 
@@ -279,17 +293,32 @@ export default function ProjectsPage() {
   );
 }
 
+// A newly named catalogue entry joins the list in place, and a name that already existed comes
+// back as itself rather than duplicating (D-03).
+function merge(current: CatalogueEntry[], entry: CatalogueEntry): CatalogueEntry[] {
+  if (current.some((existing) => existing.id === entry.id)) return current;
+  return [...current, entry].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 interface PanelProps {
   detail: ProjectDetail;
   roles: CatalogueEntry[];
   skills: CatalogueEntry[];
-  onAssign: (roleId?: string) => void;
   onChanged: () => Promise<void>;
+  onRoleAdded: (entry: CatalogueEntry) => void;
+  onSkillAdded: (entry: CatalogueEntry) => void;
 }
 
-// The declared roles and the register read from the project's side: what the project asked
-// for, and who is actually on it (FR-002, FR-005, FR-024).
-function ProjectPanel({ detail, roles, skills, onAssign, onChanged }: PanelProps) {
+// Declaring what a project needs, separately from who is on it. Who is on it, and what is
+// short, lives on the project record (FR-002, FR-005).
+function RequirementsPanel({
+  detail,
+  roles,
+  skills,
+  onChanged,
+  onRoleAdded,
+  onSkillAdded,
+}: PanelProps) {
   const [roleId, setRoleId] = useState('');
   const [requiredSkillId, setRequiredSkillId] = useState('');
   const [headcount, setHeadcount] = useState('1');
@@ -299,11 +328,7 @@ function ProjectPanel({ detail, roles, skills, onAssign, onChanged }: PanelProps
     event.preventDefault();
     setError(null);
     try {
-      await addRequirement(detail.id, {
-        roleId,
-        requiredSkillId,
-        headcount: Number(headcount),
-      });
+      await addRequirement(detail.id, { roleId, requiredSkillId, headcount: Number(headcount) });
       setRoleId('');
       setRequiredSkillId('');
       setHeadcount('1');
@@ -338,7 +363,10 @@ function ProjectPanel({ detail, roles, skills, onAssign, onChanged }: PanelProps
 
   return (
     <div className="card panel">
-      <h3>{detail.name} - declared roles</h3>
+      <div className="group-head">
+        <h3>{detail.name} - declared roles</h3>
+        <Link href={`/projects/${detail.id}`}>Open the project record</Link>
+      </div>
       {error ? <p className="error">{error}</p> : null}
 
       {detail.requirements.length === 0 ? (
@@ -379,20 +407,14 @@ function ProjectPanel({ detail, roles, skills, onAssign, onChanged }: PanelProps
                     defaultValue={requirement.headcount}
                     onBlur={(event) => {
                       const next = Number(event.target.value);
-                      if (next !== requirement.headcount)
+                      if (next !== requirement.headcount) {
                         void change(requirement.id, { headcount: next });
+                      }
                     }}
                     aria-label={`${requirement.roleName} headcount`}
                   />
                 </td>
                 <td className="row-actions">
-                  <button
-                    type="button"
-                    className="link"
-                    onClick={() => onAssign(requirement.roleId)}
-                  >
-                    Fill this role
-                  </button>
                   <button
                     type="button"
                     className="link danger-text"
@@ -445,37 +467,22 @@ function ProjectPanel({ detail, roles, skills, onAssign, onChanged }: PanelProps
         <button type="submit">Declare role</button>
       </form>
 
-      <h3>People on this project</h3>
-      {detail.assignments.length === 0 ? (
-        <p className="muted">Nobody is assigned to this project yet.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Person</th>
-              <th>Role</th>
-              <th>Allocation</th>
-              <th>Starts</th>
-              <th>Ends</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.assignments.map((assignment) => (
-              <tr key={assignment.id}>
-                <td>{assignment.employeeName}</td>
-                <td>{assignment.roleName}</td>
-                <td>{assignment.allocationPercent}%</td>
-                <td>{assignment.startDate}</td>
-                <td>{assignment.endDate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <button type="button" className="secondary" onClick={() => onAssign(undefined)}>
-        Assign somebody else
-      </button>
+      <div className="skill-row">
+        <CatalogueAdd
+          kind="role"
+          onAdded={(entry) => {
+            onRoleAdded(entry);
+            setRoleId(entry.id);
+          }}
+        />
+        <CatalogueAdd
+          kind="skill"
+          onAdded={(entry) => {
+            onSkillAdded(entry);
+            setRequiredSkillId(entry.id);
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -486,9 +493,19 @@ interface FormProps {
   project: ProjectRow | null;
   onCancel: () => void;
   onSaved: () => Promise<void>;
+  onRoleAdded: (entry: CatalogueEntry) => void;
+  onSkillAdded: (entry: CatalogueEntry) => void;
 }
 
-function ProjectForm({ roles, skills, project, onCancel, onSaved }: FormProps) {
+function ProjectForm({
+  roles,
+  skills,
+  project,
+  onCancel,
+  onSaved,
+  onRoleAdded,
+  onSkillAdded,
+}: FormProps) {
   const [name, setName] = useState(project?.name ?? '');
   const [status, setStatus] = useState<ProjectStatus>(project?.status ?? 'PLANNED');
   const [drafts, setDrafts] = useState<RequirementInput[]>([]);
@@ -544,7 +561,7 @@ function ProjectForm({ roles, skills, project, onCancel, onSaved }: FormProps) {
             >
               {PROJECT_STATUSES.map((value) => (
                 <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
+                  {PROJECT_STATUS_TEXT[value]}
                 </option>
               ))}
             </select>
@@ -553,7 +570,7 @@ function ProjectForm({ roles, skills, project, onCancel, onSaved }: FormProps) {
 
         {project ? (
           <p className="muted">
-            Declared roles are managed under &quot;Roles and people&quot; on the project.
+            Declared roles are managed under &quot;Declared roles&quot; on the project row.
           </p>
         ) : (
           <>
@@ -631,6 +648,11 @@ function ProjectForm({ roles, skills, project, onCancel, onSaved }: FormProps) {
             >
               Add a required role
             </button>
+
+            <div className="skill-row">
+              <CatalogueAdd kind="role" onAdded={onRoleAdded} />
+              <CatalogueAdd kind="skill" onAdded={onSkillAdded} />
+            </div>
           </>
         )}
 

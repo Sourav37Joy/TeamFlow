@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AssignmentRecord,
   EmployeeRecord,
+  activeHeadcount,
   loadLabel,
   remainingCapacityPercent,
   utilizationFor,
@@ -184,21 +185,21 @@ describe('utilizationForAll', () => {
 
 describe('wouldOverallocate', () => {
   it('reports no overallocation when the total fits', () => {
-    const result = wouldOverallocate(
-      priya,
-      [assignment({ id: 'a1', allocationPercent: 40 })],
-      { allocationPercent: 50, startDate: '2026-06-01', endDate: '2026-09-30' },
-    );
+    const result = wouldOverallocate(priya, [assignment({ id: 'a1', allocationPercent: 40 })], {
+      allocationPercent: 50,
+      startDate: '2026-06-01',
+      endDate: '2026-09-30',
+    });
     expect(result.overallocated).toBe(false);
     expect(result.resultingPercent).toBe(90);
   });
 
   it('reports the resulting total and the date when it would exceed capacity', () => {
-    const result = wouldOverallocate(
-      priya,
-      [assignment({ id: 'a1', allocationPercent: 80 })],
-      { allocationPercent: 50, startDate: '2026-06-01', endDate: '2026-09-30' },
-    );
+    const result = wouldOverallocate(priya, [assignment({ id: 'a1', allocationPercent: 80 })], {
+      allocationPercent: 50,
+      startDate: '2026-06-01',
+      endDate: '2026-09-30',
+    });
     expect(result.overallocated).toBe(true);
     expect(result.resultingPercent).toBe(130);
     expect(result.onDate).toBe('2026-06-01');
@@ -223,5 +224,45 @@ describe('wouldOverallocate', () => {
     );
     expect(result.overallocated).toBe(false);
     expect(result.resultingPercent).toBe(90);
+  });
+});
+
+describe('activeHeadcount', () => {
+  it('is 0 when nothing is active on the date', () => {
+    expect(activeHeadcount([assignment({ id: 'a1', endDate: '2026-05-31' })], TODAY)).toBe(0);
+  });
+
+  it('counts one person once even when they hold two roles', () => {
+    const result = activeHeadcount(
+      [
+        assignment({ id: 'a1', employeeId: 'e1', roleId: 'r1' }),
+        assignment({ id: 'a2', employeeId: 'e1', roleId: 'r2' }),
+      ],
+      TODAY,
+    );
+    expect(result).toBe(1);
+  });
+
+  it('counts distinct people', () => {
+    const result = activeHeadcount(
+      [
+        assignment({ id: 'a1', employeeId: 'e1' }),
+        assignment({ id: 'a2', employeeId: 'e2' }),
+        assignment({ id: 'a3', employeeId: 'e3' }),
+      ],
+      TODAY,
+    );
+    expect(result).toBe(3);
+  });
+
+  it('excludes a person whose assignment has expired', () => {
+    const result = activeHeadcount(
+      [
+        assignment({ id: 'a1', employeeId: 'e1' }),
+        assignment({ id: 'a2', employeeId: 'e2', endDate: '2026-05-31' }),
+      ],
+      TODAY,
+    );
+    expect(result).toBe(1);
   });
 });

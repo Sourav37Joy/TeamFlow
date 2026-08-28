@@ -366,3 +366,150 @@ p.fixed {
   color: var(--warn);
   font-size: 14px;
 }
+
+.toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.group-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.group-head h3 {
+  margin: 0;
+}
+
+.group-head label {
+  margin-bottom: 2px;
+}
+
+.group-head input {
+  margin-bottom: 0;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  white-space: nowrap;
+}
+
+.badge-unassigned {
+  color: var(--muted);
+}
+
+.badge-available {
+  background: #eaf6ec;
+  border-color: #bfe0c6;
+}
+
+.badge-balanced {
+  background: #e7f1ff;
+  border-color: #b9d3ff;
+}
+
+.badge-high_load {
+  background: #fff4e5;
+  border-color: #f2d3a7;
+  color: var(--warn);
+}
+
+.badge-overallocated {
+  background: #fdeceb;
+  border-color: #f3c2bf;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.figures {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.figures p {
+  margin: 0;
+}
+
+.figure-value {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--bg);
+}
+
+.empty-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.empty p.muted {
+  margin: 0;
+}
+
+.notice {
+  border-left: 3px solid var(--warn);
+  background: #fff8f0;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.wide-panel {
+  grid-column: 1 / -1;
+}
+
+.dialog.wide {
+  max-width: 860px;
+}
+
+.panel-inset {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.score {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.catalogue-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.catalogue-add input {
+  margin-bottom: 0;
+  max-width: 240px;
+}
+
+.catalogue-add .error {
+  margin-bottom: 0;
+}

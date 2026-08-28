@@ -236,14 +236,26 @@ const ASSIGNMENTS: Array<{
     to: 140,
   },
   {
-    employee: 'Chen Wei',
-    project: 'Echo Launch',
-    role: 'QA Engineer',
-    percent: 25,
-    from: -120,
-    to: -30,
+    employee: 'Farid Haddad',
+    project: 'Atlas Rollout',
+    role: 'Frontend Developer',
+    percent: 60,
+    from: -15,
+    to: 75,
   },
 ];
+
+// A handover that already happened, so replacement history is readable without performing one
+// first (Constitution X, FR-051). Both halves are in the past, which keeps it out of today's
+// utilization figures. The dates adjoin exactly: Chen ends the day before Ines begins (FR-046).
+const COMPLETED_HANDOVER = {
+  project: 'Echo Launch',
+  role: 'QA Engineer',
+  percent: 25,
+  outgoing: { employee: 'Chen Wei', from: -120, to: -76 },
+  incoming: { employee: 'Ines Ruiz', from: -75, to: -30 },
+  effective: -75,
+};
 
 async function main() {
   const passwordHash = await argon2.hash('teamflow-dev');
@@ -329,6 +341,44 @@ async function main() {
     });
   }
 
+  const handover = COMPLETED_HANDOVER;
+  const outgoing = await prisma.assignment.create({
+    data: {
+      employeeId: required(employeeIds, handover.outgoing.employee, 'employee'),
+      projectId: required(projectIds, handover.project, 'project'),
+      roleId: required(roleIds, handover.role, 'role'),
+      allocationPercent: handover.percent,
+      startDate: shift(handover.outgoing.from),
+      endDate: shift(handover.outgoing.to),
+      createdByUserId: admin.id,
+      updatedByUserId: admin.id,
+    },
+  });
+
+  const incoming = await prisma.assignment.create({
+    data: {
+      employeeId: required(employeeIds, handover.incoming.employee, 'employee'),
+      projectId: required(projectIds, handover.project, 'project'),
+      roleId: required(roleIds, handover.role, 'role'),
+      allocationPercent: handover.percent,
+      startDate: shift(handover.incoming.from),
+      endDate: shift(handover.incoming.to),
+      predecessorAssignmentId: outgoing.id,
+      createdByUserId: admin.id,
+      updatedByUserId: admin.id,
+    },
+  });
+
+  await prisma.replacement.create({
+    data: {
+      outgoingAssignmentId: outgoing.id,
+      incomingAssignmentId: incoming.id,
+      outgoingEmployeeId: outgoing.employeeId,
+      effectiveDate: shift(handover.effective),
+      performedByUserId: admin.id,
+    },
+  });
+
   const counts = {
     users: await prisma.user.count(),
     skills: await prisma.skill.count(),
@@ -337,6 +387,7 @@ async function main() {
     projects: await prisma.project.count(),
     requirements: await prisma.roleRequirement.count(),
     assignments: await prisma.assignment.count(),
+    replacements: await prisma.replacement.count(),
   };
 
   process.stdout.write(`Seeded: ${JSON.stringify(counts)}\n`);

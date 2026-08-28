@@ -17,11 +17,34 @@ export interface AssignmentRow {
   updatedAt: Date;
 }
 
+export interface NameIndexes {
+  employeeNames: Map<string, string>;
+  projectNames: Map<string, string>;
+  roleNames: Map<string, string>;
+}
+
 const UNKNOWN = 'Unknown';
 
-// MongoDB cannot join, so a read of the register fetches its records and resolves the
-// names in memory rather than per row (D-11). Every screen reads the same shape, from
-// the employee side and the project side alike (FR-024).
+// MongoDB cannot join, so a read of the register resolves its names from already-fetched
+// records rather than per row (D-11). Every screen reads the same shape, from the employee
+// side and the project side alike (FR-024).
+export function toRows(assignments: Assignment[], names: NameIndexes): AssignmentRow[] {
+  return assignments.map((assignment) => ({
+    id: assignment.id,
+    employeeId: assignment.employeeId,
+    employeeName: names.employeeNames.get(assignment.employeeId) ?? UNKNOWN,
+    projectId: assignment.projectId,
+    projectName: names.projectNames.get(assignment.projectId) ?? UNKNOWN,
+    roleId: assignment.roleId,
+    roleName: names.roleNames.get(assignment.roleId) ?? UNKNOWN,
+    allocationPercent: assignment.allocationPercent,
+    startDate: assignment.startDate,
+    endDate: assignment.endDate,
+    createdAt: assignment.createdAt,
+    updatedAt: assignment.updatedAt,
+  }));
+}
+
 export async function assignmentRows(
   prisma: PrismaService,
   assignments: Assignment[],
@@ -43,22 +66,9 @@ export async function assignmentRows(
     }),
   ]);
 
-  const employeeNames = nameIndex(employees);
-  const projectNames = nameIndex(projects);
-  const roleNames = nameIndex(roles);
-
-  return assignments.map((assignment) => ({
-    id: assignment.id,
-    employeeId: assignment.employeeId,
-    employeeName: employeeNames.get(assignment.employeeId) ?? UNKNOWN,
-    projectId: assignment.projectId,
-    projectName: projectNames.get(assignment.projectId) ?? UNKNOWN,
-    roleId: assignment.roleId,
-    roleName: roleNames.get(assignment.roleId) ?? UNKNOWN,
-    allocationPercent: assignment.allocationPercent,
-    startDate: assignment.startDate,
-    endDate: assignment.endDate,
-    createdAt: assignment.createdAt,
-    updatedAt: assignment.updatedAt,
-  }));
+  return toRows(assignments, {
+    employeeNames: nameIndex(employees),
+    projectNames: nameIndex(projects),
+    roleNames: nameIndex(roles),
+  });
 }

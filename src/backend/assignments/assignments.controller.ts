@@ -5,7 +5,7 @@ import { CurrentUser, SignedInUser } from '../auth/current-user.decorator';
 import { CalendarDate, isRangeOrdered } from '../calc/dates';
 import { isActiveOn, wouldOverallocate } from '../calc/utilization';
 import { assignmentRows, AssignmentRow } from '../common/assignment-row';
-import { resolveAsOf } from '../common/as-of';
+import { resolveAsOf, todayHere } from '../common/as-of';
 import { deleteAssignmentAndDetachSuccessors } from '../common/cascade';
 import { NotFound, RuleViolation, ValidationFailed } from '../common/errors';
 import {
@@ -23,6 +23,8 @@ import {
 } from '../common/warnings';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { PrismaService } from '../prisma.service';
+import { historyForAssignment } from './replacement-history';
+import { commitReplacement, planReplacement, replacementWarnings } from './replacement';
 
 const createAssignmentSchema = z.object({
   employeeId: objectIdSchema,
@@ -47,6 +49,17 @@ const updateAssignmentSchema = z
       ['roleId', 'allocationPercent', 'startDate', 'endDate'].some((field) => field in body),
     { message: 'at least one of roleId, allocationPercent, startDate, or endDate' },
   );
+
+// The incoming person, the handover date, and optionally an adjusted percentage and end date.
+// The role and the project are never adjustable here: this is a handover of one commitment,
+// not a new one (FR-044).
+const replacementSchema = z.object({
+  incomingEmployeeId: objectIdSchema,
+  effectiveDate: calendarDateSchema,
+  allocationPercent: percentSchema('a whole percentage').optional(),
+  endDate: calendarDateSchema.optional(),
+  acknowledgeWarnings: z.boolean().optional(),
+});
 
 interface ProposedRange {
   allocationPercent: number;
@@ -87,7 +100,45 @@ export class AssignmentsController {
   @Get(':id')
   async read(@Param('id') id: string) {
     const assignmentId = requireObjectId('id', id);
-    return this.one(await this.find(assignmentId));
+    const assignment = await this.find(assignmentId);
+
+    return {
+      ...(await this.one(assignment)),
+      predecessorAssignmentId: assignment.predecessorAssignmentId,
+      replacementHistory: await historyForAssignment(this.prisma, assignment),
+    };
+  }
+
+  // One operation, one transaction. The outgoing commitment is shortened to the day before
+  // the handover and the incoming one opens on it, so the project's headcount for that role
+  // never dips or doubles (FR-043, FR-046, D-08).
+  @Post(':id/replacement')
+  async replace(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(replacementSchema)) input: z.infer<typeof replacementSchema>,
+    @CurrentUser() user: SignedInUser,
+    @Query() query: Record<string, unknown>,
+  ) {
+    const assignmentId = requireObjectId('id', id);
+    requireObjectId('incomingEmployeeId', input.incomingEmployeeId);
+
+    const plan = await planReplacement(this.prisma, assignmentId, input, todayHere());
+    const warnings = await replacementWarnings(this.prisma, plan);
+
+    const gated = await gateOnWarnings(warnings, readWriteOptions(query, input), () =>
+      commitReplacement(this.prisma, plan, user.id),
+    );
+
+    return {
+      warnings: gated.warnings,
+      effectiveDate: plan.effectiveDate,
+      outgoingEmployeeName: plan.outgoingEmployee.name,
+      incomingEmployeeName: plan.incomingEmployee.name,
+      outgoingRemoved: plan.outgoingRemoved,
+      outgoingEndsOn: plan.outgoingNewEndDate,
+      incoming: gated.result ? await this.one(gated.result.incoming) : null,
+      outgoing: gated.result?.outgoing ? await this.one(gated.result.outgoing) : null,
+    };
   }
 
   @Post()

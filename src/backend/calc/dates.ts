@@ -37,6 +37,8 @@ export function dayBefore(date: CalendarDate): CalendarDate {
   return formatCalendarDate(d);
 }
 
+// The mirror of dayBefore. Nothing in the application needs it, but stepping forward is what
+// makes the round-trip invariant SC-007 rests on testable over a whole year.
 export function dayAfter(date: CalendarDate): CalendarDate {
   const d = parseCalendarDate(date);
   d.setUTCDate(d.getUTCDate() + 1);

@@ -127,11 +127,11 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: Seed people across several projects, open the overview, and confirm every active assignment appears exactly once under both groupings with correct totals; then search by skill and move the evaluation date three months out. Quickstart V2.
 
-- [ ] T040 [US2] Implement `GET /api/allocation-overview` in `src/backend/views/allocation.controller.ts`: one indexed fetch then in-memory shaping, supporting `?groupBy=person|project`, `?q=`, `?skillId=`, `?roleId=`, and `?asOf=` (FR-026 to FR-030, D-11)
-- [ ] T041 [US2] Compute per-person committed totals and per-project assigned headcount in the overview by calling `calc/utilization.ts`, never by arithmetic in the controller (FR-027, FR-028, Constitution II)
-- [ ] T042 [P] [US2] Build the allocation overview page in `src/web/app/allocation/page.tsx` with a person-or-project grouping toggle, a search box, and an evaluation-date picker
-- [ ] T043 [P] [US2] Build the empty state in `src/web/components/EmptyState.tsx` naming the evaluation date when nothing is active, rather than rendering a blank list (FR-031)
-- [ ] T044 [US2] Make every overview row in `src/web/app/allocation/page.tsx` link through to the employee, project, or assignment record (FR-031)
+- [X] T040 [US2] Implement `GET /api/allocation-overview` in `src/backend/views/allocation.controller.ts`: one indexed fetch then in-memory shaping, supporting `?groupBy=person|project`, `?q=`, `?skillId=`, `?roleId=`, and `?asOf=` (FR-026 to FR-030, D-11)
+- [X] T041 [US2] Compute per-person committed totals and per-project assigned headcount in the overview by calling `calc/utilization.ts`, never by arithmetic in the controller (FR-027, FR-028, Constitution II)
+- [X] T042 [P] [US2] Build the allocation overview page in `src/web/app/allocation/page.tsx` with a person-or-project grouping toggle, a search box, and an evaluation-date picker
+- [X] T043 [P] [US2] Build the empty state in `src/web/components/EmptyState.tsx` naming the evaluation date when nothing is active, rather than rendering a blank list (FR-031)
+- [X] T044 [US2] Make every overview row in `src/web/app/allocation/page.tsx` link through to the employee, project, or assignment record (FR-031)
 
 **Checkpoint**: "Who is assigned where" is answerable from one screen within ten seconds (SC-001).
 
@@ -143,11 +143,11 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: A person with 50% and 30% reads 80% and `Balanced`; one with 60% and 60% reads 120% and `Overallocated`; an expired assignment is excluded from today but still listed. Quickstart V3.
 
-- [ ] T045 [US3] Implement `GET /api/employees/{id}/utilization` in `src/backend/employees/utilization.controller.ts`, returning utilization, remaining capacity, load label, and contributing assignments at `?asOf=` (FR-032 to FR-036)
-- [ ] T046 [US3] Add derived utilization and load label to the employee list response and support `?loadLabel=` filtering in `src/backend/employees/employees.controller.ts` (FR-014)
-- [ ] T047 [P] [US3] Build the employee detail page in `src/web/app/employees/[id]/page.tsx` showing the load label, remaining capacity, and the contributing assignments with their individual percentages so the total is traceable, and all assignments held by that employee (FR-024, FR-036)
-- [ ] T048 [P] [US3] Build the load-label badge in `src/web/components/LoadLabel.tsx`, giving `Overallocated` a clear visual warning
-- [ ] T049 [US3] In `src/web/app/employees/[id]/page.tsx`, list expired and future assignments with their date ranges while excluding them from the total shown for today (FR-035)
+- [X] T045 [US3] Implement `GET /api/employees/{id}/utilization` in `src/backend/employees/utilization.controller.ts`, returning utilization, remaining capacity, load label, and contributing assignments at `?asOf=` (FR-032 to FR-036)
+- [X] T046 [US3] Add derived utilization and load label to the employee list response and support `?loadLabel=` filtering in `src/backend/employees/employees.controller.ts` (FR-014)
+- [X] T047 [P] [US3] Build the employee detail page in `src/web/app/employees/[id]/page.tsx` showing the load label, remaining capacity, and the contributing assignments with their individual percentages so the total is traceable, and all assignments held by that employee (FR-024, FR-036)
+- [X] T048 [P] [US3] Build the load-label badge in `src/web/components/LoadLabel.tsx`, giving `Overallocated` a clear visual warning
+- [X] T049 [US3] In `src/web/app/employees/[id]/page.tsx`, list expired and future assignments with their date ranges while excluding them from the total shown for today (FR-035)
 
 **Checkpoint**: every displayed utilization figure equals the sum of that person's assignments active on the viewed date (SC-009).
 
@@ -159,12 +159,12 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: A project requiring 3 Backend Developers with 1 assigned reads 1 of 3, shortfall 2, `Understaffed`; a 1-person role with 2 assigned flags overstaffed; a project with no requirements reads `No requirements declared`. Quickstart V4.
 
-- [ ] T050 [US4] Implement `src/backend/calc/staffing.ts` as pure functions: per-requirement required, filled, shortfall or surplus, the fillers with their percentages, unrequested-role surplus, and the project-level status (FR-038 to FR-042), one comment per function naming its rule
-- [ ] T051 [US4] Write `tests/calc/staffing.spec.ts` covering fully staffed, understaffed, overstaffed, no-requirements-declared, an expired assignment reopening a shortfall, and an assignment on a role the project never declared
-- [ ] T052 [US4] Implement `GET /api/projects/{id}/staffing` in `src/backend/projects/staffing.controller.ts` at `?asOf=`, and add derived staffing status plus `?staffingStatus=` filtering to the project list (FR-007, FR-038 to FR-042)
-- [ ] T053 [US4] Exclude `ON_HOLD`, `COMPLETED`, and `CANCELLED` projects from gap reporting while keeping their staffing readable (FR-039, D-02)
-- [ ] T054 [P] [US4] Build the project detail page in `src/web/app/projects/[id]/page.tsx` showing per-role required versus filled, the shortfall, the fillers and their percentages, all people assigned to the project, and any unrequested-role surplus (FR-024)
-- [ ] T055 [US4] Add a fill-this-role action to each short requirement in `src/web/app/projects/[id]/page.tsx`, opening `src/web/components/AssignmentForm.tsx` with project and role pre-filled (FR-041, FR-017)
+- [X] T050 [US4] Implement `src/backend/calc/staffing.ts` as pure functions: per-requirement required, filled, shortfall or surplus, the fillers with their percentages, unrequested-role surplus, and the project-level status (FR-038 to FR-042), one comment per function naming its rule
+- [X] T051 [US4] Write `tests/calc/staffing.spec.ts` covering fully staffed, understaffed, overstaffed, no-requirements-declared, an expired assignment reopening a shortfall, and an assignment on a role the project never declared
+- [X] T052 [US4] Implement `GET /api/projects/{id}/staffing` in `src/backend/projects/staffing.controller.ts` at `?asOf=`, and add derived staffing status plus `?staffingStatus=` filtering to the project list (FR-007, FR-038 to FR-042)
+- [X] T053 [US4] Exclude `ON_HOLD`, `COMPLETED`, and `CANCELLED` projects from gap reporting while keeping their staffing readable (FR-039, D-02)
+- [X] T054 [P] [US4] Build the project detail page in `src/web/app/projects/[id]/page.tsx` showing per-role required versus filled, the shortfall, the fillers and their percentages, all people assigned to the project, and any unrequested-role surplus (FR-024)
+- [X] T055 [US4] Add a fill-this-role action to each short requirement in `src/web/app/projects/[id]/page.tsx`, opening `src/web/components/AssignmentForm.tsx` with project and role pre-filled (FR-041, FR-017)
 
 **Checkpoint**: every displayed staffing figure equals required minus actively assigned headcount per role (SC-010).
 
@@ -176,14 +176,14 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: Replace Priya with Sam effective 2026-10-01 on a 50% assignment running to 2026-12-31; confirm Priya ends 2026-09-30, Sam runs from 2026-10-01, and **the project's headcount for that role is 1 on both dates**. Quickstart V5.
 
-- [ ] T056 [US5] Implement the replacement transaction in `src/backend/assignments/replacement.ts`: in one Prisma transaction, shorten the outgoing assignment to `dayBefore(effectiveDate)` or delete it when the effective date equals its start date, create the incoming assignment from the effective date, set `predecessorAssignmentId`, and write the `Replacement` record (FR-043 to FR-047, FR-051, D-08)
-- [ ] T057 [US5] Implement `POST /api/assignments/{id}/replacement` in `src/backend/assignments/assignments.controller.ts`, accepting the incoming employee, effective date, and optional percentage and end-date overrides (FR-043, FR-044)
-- [ ] T058 [US5] In `src/backend/assignments/replacement.ts`, add the replacement refusals: same person in and out, an incoming employee already on that project and role, an effective date outside the assignment's range, and an assignment that has already ended - each naming the rule and the permitted window (FR-045, FR-048, FR-049)
-- [ ] T059 [US5] Wire the overallocation warning and the single-day-handover and outgoing-removed warnings into the replacement flow, including `?dryRun=true` (FR-050, FR-047, Constitution VIII)
-- [ ] T060 [US5] Expose replacement history on the assignment and on both employees' records by following `predecessorAssignmentId` and the `Replacement` records, so repeated replacement reads as an appending chain (FR-051)
-- [ ] T061 [US5] Build the replacement flow in `src/web/components/ReplacementDialog.tsx`: pick the incoming person, set the effective date, see the carried-over role, percentage and end date, adjust them, and cancel without any change (FR-044, FR-052)
-- [ ] T062 [P] [US5] Build the replacement history panel in `src/web/components/ReplacementHistory.tsx`, naming both people, the effective date, and who performed the swap (FR-051, SC-008)
-- [ ] T063 [US5] Extend `seed/index.ts` with one completed replacement so history is visible without performing one first (Constitution X)
+- [X] T056 [US5] Implement the replacement transaction in `src/backend/assignments/replacement.ts`: in one Prisma transaction, shorten the outgoing assignment to `dayBefore(effectiveDate)` or delete it when the effective date equals its start date, create the incoming assignment from the effective date, set `predecessorAssignmentId`, and write the `Replacement` record (FR-043 to FR-047, FR-051, D-08)
+- [X] T057 [US5] Implement `POST /api/assignments/{id}/replacement` in `src/backend/assignments/assignments.controller.ts`, accepting the incoming employee, effective date, and optional percentage and end-date overrides (FR-043, FR-044)
+- [X] T058 [US5] In `src/backend/assignments/replacement.ts`, add the replacement refusals: same person in and out, an incoming employee already on that project and role, an effective date outside the assignment's range, and an assignment that has already ended - each naming the rule and the permitted window (FR-045, FR-048, FR-049)
+- [X] T059 [US5] Wire the overallocation warning and the single-day-handover and outgoing-removed warnings into the replacement flow, including `?dryRun=true` (FR-050, FR-047, Constitution VIII)
+- [X] T060 [US5] Expose replacement history on the assignment and on both employees' records by following `predecessorAssignmentId` and the `Replacement` records, so repeated replacement reads as an appending chain (FR-051)
+- [X] T061 [US5] Build the replacement flow in `src/web/components/ReplacementDialog.tsx`: pick the incoming person, set the effective date, see the carried-over role, percentage and end date, adjust them, and cancel without any change (FR-044, FR-052)
+- [X] T062 [P] [US5] Build the replacement history panel in `src/web/components/ReplacementHistory.tsx`, naming both people, the effective date, and who performed the swap (FR-051, SC-008)
+- [X] T063 [US5] Extend `seed/index.ts` with one completed replacement so history is visible without performing one first (Constitution X)
 
 **Checkpoint**: SC-007 holds - no replacement ever shows a phantom gap in a project's headcount.
 
@@ -195,13 +195,13 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: With employees of differing skill ratings and loads, request candidates for a gap and confirm the order and both displayed components match the expected arithmetic; request the same list twice including a tie and confirm identical order. Quickstart V6.
 
-- [ ] T064 [US6] Implement `src/backend/calc/candidates.ts` as pure functions: skill component as `round(rating / 5 * 100)`, capacity component as remaining capacity, overall score as `round((skill + capacity) / 2)`, and ordering by score desc, rating desc, name asc, id asc (FR-055, FR-056, D-10)
-- [ ] T065 [US6] Add the exclusion rules to `src/backend/calc/candidates.ts`: anyone already on that project in that role, the outgoing employee on a replacement, and anyone with zero remaining capacity (FR-057, FR-058)
-- [ ] T066 [US6] Write `tests/calc/candidates.spec.ts` covering equal skill ranked by capacity, equal capacity ranked by skill, every exclusion rule, an exact score tie resolved by rating then name then id, and repeatability of the same input producing the same order (SC-012)
-- [ ] T067 [US6] Implement `GET /api/projects/{id}/requirements/{reqId}/candidates` in `src/backend/projects/candidates.controller.ts`, returning the typed reasons `NO_CANDIDATE_HAS_CAPACITY`, `NO_EMPLOYEE_HOLDS_SKILL` naming the skill, and `ROLE_ALREADY_STAFFED`, rather than a bare empty list (FR-058, FR-059, FR-061)
-- [ ] T068 [US6] Implement `GET /api/assignments/{id}/replacement-candidates` in `src/backend/assignments/candidates.controller.ts`, excluding the outgoing employee, and restrict both candidate endpoints to requirements on `PLANNED` or `ACTIVE` projects (FR-052, FR-053, FR-057)
-- [ ] T069 [P] [US6] Build the candidate list in `src/web/components/CandidateList.tsx` showing overall score, skill rating, skill component, and remaining capacity on every row - no opaque recommendations (FR-054, Constitution IX)
-- [ ] T070 [US6] Wire the accept action in `src/web/components/CandidateList.tsx`: from a role gap it opens `src/web/components/AssignmentForm.tsx` pre-filled and creates nothing automatically; inside `src/web/components/ReplacementDialog.tsx` it sets the incoming person without leaving the flow (FR-060, FR-052)
+- [X] T064 [US6] Implement `src/backend/calc/candidates.ts` as pure functions: skill component as `round(rating / 5 * 100)`, capacity component as remaining capacity, overall score as `round((skill + capacity) / 2)`, and ordering by score desc, rating desc, name asc, id asc (FR-055, FR-056, D-10)
+- [X] T065 [US6] Add the exclusion rules to `src/backend/calc/candidates.ts`: anyone already on that project in that role, the outgoing employee on a replacement, and anyone with zero remaining capacity (FR-057, FR-058)
+- [X] T066 [US6] Write `tests/calc/candidates.spec.ts` covering equal skill ranked by capacity, equal capacity ranked by skill, every exclusion rule, an exact score tie resolved by rating then name then id, and repeatability of the same input producing the same order (SC-012)
+- [X] T067 [US6] Implement `GET /api/projects/{id}/requirements/{reqId}/candidates` in `src/backend/projects/candidates.controller.ts`, returning the typed reasons `NO_CANDIDATE_HAS_CAPACITY`, `NO_EMPLOYEE_HOLDS_SKILL` naming the skill, and `ROLE_ALREADY_STAFFED`, rather than a bare empty list (FR-058, FR-059, FR-061)
+- [X] T068 [US6] Implement `GET /api/assignments/{id}/replacement-candidates` in `src/backend/assignments/candidates.controller.ts`, excluding the outgoing employee, and restrict both candidate endpoints to requirements on `PLANNED` or `ACTIVE` projects (FR-052, FR-053, FR-057)
+- [X] T069 [P] [US6] Build the candidate list in `src/web/components/CandidateList.tsx` showing overall score, skill rating, skill component, and remaining capacity on every row - no opaque recommendations (FR-054, Constitution IX)
+- [X] T070 [US6] Wire the accept action in `src/web/components/CandidateList.tsx`: from a role gap it opens `src/web/components/AssignmentForm.tsx` pre-filled and creates nothing automatically; inside `src/web/components/ReplacementDialog.tsx` it sets the incoming person without leaving the flow (FR-060, FR-052)
 
 **Checkpoint**: any recommendation can be explained from the screen alone (SC-011), and ranking is repeatable (SC-012).
 
@@ -213,11 +213,11 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 **Independent Test**: Seed a mix of overloaded people, free people, and understaffed projects; confirm each appears in the right panel with correct figures and ordering, and that the seeded Completed and Cancelled projects appear in none of them. Quickstart V7.
 
-- [ ] T071 [US8] Implement `GET /api/dashboard` in `src/backend/views/dashboard.controller.ts` returning all three panels in one response, built from `calc/utilization.ts` and `calc/staffing.ts` at `?asOf=` (FR-072, Constitution II)
-- [ ] T072 [US8] Order the panels as specified: overallocated people most overloaded first, available people by most spare capacity first, and gaps limited to `PLANNED` and `ACTIVE` projects (FR-073 to FR-075, D-02)
-- [ ] T073 [P] [US8] Build the dashboard page in `src/web/app/dashboard/page.tsx` with the three panels, each entry linking through to its person or project (FR-076)
-- [ ] T074 [US8] Give every panel in `src/web/app/dashboard/page.tsx` an explicit nothing-to-action empty state via `src/web/components/EmptyState.tsx`, rather than a blank box (FR-077)
-- [ ] T075 [US8] Make the dashboard the landing route after sign-in by redirecting from `src/web/app/page.tsx`
+- [X] T071 [US8] Implement `GET /api/dashboard` in `src/backend/views/dashboard.controller.ts` returning all three panels in one response, built from `calc/utilization.ts` and `calc/staffing.ts` at `?asOf=` (FR-072, Constitution II)
+- [X] T072 [US8] Order the panels as specified: overallocated people most overloaded first, available people by most spare capacity first, and gaps limited to `PLANNED` and `ACTIVE` projects (FR-073 to FR-075, D-02)
+- [X] T073 [P] [US8] Build the dashboard page in `src/web/app/dashboard/page.tsx` with the three panels, each entry linking through to its person or project (FR-076)
+- [X] T074 [US8] Give every panel in `src/web/app/dashboard/page.tsx` an explicit nothing-to-action empty state via `src/web/components/EmptyState.tsx`, rather than a blank box (FR-077)
+- [X] T075 [US8] Make the dashboard the landing route after sign-in by redirecting from `src/web/app/page.tsx`
 
 **Checkpoint**: "who is overallocated right now?" is answerable within ten seconds of opening the tool (SC-002).
 
@@ -225,13 +225,13 @@ Per plan.md: one deployable, NestJS serving Next.js, both halves under `src/`.
 
 ## Phase 10: Polish and Cross-Cutting Concerns
 
-- [ ] T076 Walk the whole of [quickstart.md](./quickstart.md) V1 to V8 and fix what it surfaces - this is the acceptance pass that replaces an automated suite
-- [ ] T077 Cross-check one overallocated person and one understaffed project across `src/web/app/dashboard/`, `src/web/app/allocation/`, `src/web/app/employees/[id]/`, and `src/web/app/projects/[id]/`; any disagreement is a Constitution II defect, not a rounding difference (FR-079, SC-020)
-- [ ] T078 Verify every validation refusal names the offending field and its permitted values, against each rule in [contracts/errors.md](./contracts/errors.md) (FR-078, SC-018)
-- [ ] T079 [P] Confirm `prisma/schema.prisma` stores no derived figure, contains no phase or stage collection between project and its requirements or assignments, and that `src/web` computes no derived figure (FR-008, FR-037, Constitution II and III)
-- [ ] T080 [P] Add a scale seed to `seed/scale.ts` at 500 employees, 100 projects, and 2,000 assignments, and confirm the dashboard and allocation overview stay under two seconds (SC-017)
-- [ ] T081 Remove dead code, commented-out blocks, and leftover debug output; confirm comments exist only where intent cannot be expressed in code, plus the one-line rule comments in `src/backend/calc/` (Constitution V and VI)
-- [ ] T082 Confirm no stubbed screens or placeholder pages exist under `src/web/app/`, and that User Story 7 is absent rather than faked (Constitution I)
+- [X] T076 Walk the whole of [quickstart.md](./quickstart.md) V1 to V8 and fix what it surfaces - this is the acceptance pass that replaces an automated suite
+- [X] T077 Cross-check one overallocated person and one understaffed project across `src/web/app/dashboard/`, `src/web/app/allocation/`, `src/web/app/employees/[id]/`, and `src/web/app/projects/[id]/`; any disagreement is a Constitution II defect, not a rounding difference (FR-079, SC-020)
+- [X] T078 Verify every validation refusal names the offending field and its permitted values, against each rule in [contracts/errors.md](./contracts/errors.md) (FR-078, SC-018)
+- [X] T079 [P] Confirm `prisma/schema.prisma` stores no derived figure, contains no phase or stage collection between project and its requirements or assignments, and that `src/web` computes no derived figure (FR-008, FR-037, Constitution II and III)
+- [X] T080 [P] Add a scale seed to `seed/scale.ts` at 500 employees, 100 projects, and 2,000 assignments, and confirm the dashboard and allocation overview stay under two seconds (SC-017)
+- [X] T081 Remove dead code, commented-out blocks, and leftover debug output; confirm comments exist only where intent cannot be expressed in code, plus the one-line rule comments in `src/backend/calc/` (Constitution V and VI)
+- [X] T082 Confirm no stubbed screens or placeholder pages exist under `src/web/app/`, and that User Story 7 is absent rather than faked (Constitution I)
 
 ---
 

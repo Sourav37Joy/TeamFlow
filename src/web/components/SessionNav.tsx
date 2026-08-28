@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { currentSession, SessionUser, signOut } from '../lib/api';
 
 const LINKS = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/allocation', label: 'Who is where' },
   { href: '/projects', label: 'Projects' },
   { href: '/employees', label: 'People' },
 ];

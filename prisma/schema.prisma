@@ -98,7 +98,9 @@ model Assignment {
 model Replacement {
   id                    String   @id @default(auto()) @map("_id") @db.ObjectId
   outgoingAssignmentId  String?  @db.ObjectId
-  incomingAssignmentId  String   @db.ObjectId
+  // Both references are optional so a deleted assignment leaves the history readable rather
+  // than deleting the record of a handover that really happened (FR-051, data-model.md).
+  incomingAssignmentId  String?  @db.ObjectId
   outgoingEmployeeId    String   @db.ObjectId
   effectiveDate         String
   performedByUserId     String   @db.ObjectId

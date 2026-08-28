@@ -26,12 +26,12 @@ export interface EmployeeRecord {
   totalCapacityPercent: number;
 }
 
-export interface Utilization {
+export interface Utilization<T extends AssignmentRecord = AssignmentRecord> {
   employeeId: string;
   utilizationPercent: number;
   remainingCapacityPercent: number;
   loadLabel: LoadLabel;
-  contributingAssignments: AssignmentRecord[];
+  contributingAssignments: T[];
 }
 
 // An assignment counts on a date when that date falls inside its inclusive range (FR-032).
@@ -39,11 +39,17 @@ export function isActiveOn(assignment: AssignmentRecord, asOf: CalendarDate): bo
   return isWithinRange(asOf, assignment.startDate, assignment.endDate);
 }
 
-export function activeAssignments(
-  assignments: AssignmentRecord[],
+export function activeAssignments<T extends AssignmentRecord>(
+  assignments: T[],
   asOf: CalendarDate,
-): AssignmentRecord[] {
+): T[] {
   return assignments.filter((a) => isActiveOn(a, asOf));
+}
+
+// Headcount counts people, not commitments: somebody holding two roles on one project is
+// one head (FR-040). Both the allocation overview and project staffing read it from here.
+export function activeHeadcount(assignments: AssignmentRecord[], asOf: CalendarDate): number {
+  return new Set(activeAssignments(assignments, asOf).map((a) => a.employeeId)).size;
 }
 
 // Utilization is the sum of the allocations active on the evaluation date (FR-032).
@@ -69,11 +75,11 @@ export function loadLabel(utilization: number): LoadLabel {
 }
 
 // The contributing assignments travel with the total so a manager can trace it to its sources (FR-036).
-export function utilizationFor(
+export function utilizationFor<T extends AssignmentRecord>(
   employee: EmployeeRecord,
-  assignments: AssignmentRecord[],
+  assignments: T[],
   asOf: CalendarDate,
-): Utilization {
+): Utilization<T> {
   const own = assignments.filter((a) => a.employeeId === employee.id);
   const contributing = activeAssignments(own, asOf);
   const utilization = contributing.reduce((sum, a) => sum + a.allocationPercent, 0);
@@ -86,12 +92,12 @@ export function utilizationFor(
   };
 }
 
-export function utilizationForAll(
+export function utilizationForAll<T extends AssignmentRecord>(
   employees: EmployeeRecord[],
-  assignments: AssignmentRecord[],
+  assignments: T[],
   asOf: CalendarDate,
-): Utilization[] {
-  const byEmployee = new Map<string, AssignmentRecord[]>();
+): Array<Utilization<T>> {
+  const byEmployee = new Map<string, T[]>();
   for (const a of assignments) {
     const bucket = byEmployee.get(a.employeeId);
     if (bucket) bucket.push(a);

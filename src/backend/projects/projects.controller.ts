@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Prisma, Project, ProjectStatus } from '@prisma/client';
 import { z } from 'zod';
+import { STAFFING_STATUSES, StaffingStatus } from '../calc/staffing';
+import { resolveAsOf } from '../common/as-of';
 import { assignmentRows } from '../common/assignment-row';
 import { deleteProjectWithRequirementsAndAssignments } from '../common/cascade';
 import { ConfirmationRequired, NotFound, RuleViolation, ValidationFailed } from '../common/errors';
@@ -8,6 +10,7 @@ import { nameContains, nameSchema, objectIdSchema, requireObjectId } from '../co
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { PrismaService } from '../prisma.service';
 import { requirementRows } from './requirement-row';
+import { staffingViews } from './staffing-view';
 
 const STATUSES = Object.values(ProjectStatus);
 const STATUS_RULE = `one of ${STATUSES.join(', ')}`;
@@ -38,8 +41,16 @@ const updateProjectSchema = z
 export class ProjectsController {
   constructor(private readonly prisma: PrismaService) {}
 
+  // The list carries each project's staffing status at the evaluation date, so "which projects
+  // are short" is answerable from the list itself (FR-007, FR-039).
   @Get()
-  async list(@Query('q') q?: string, @Query('status') status?: string) {
+  async list(
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('staffingStatus') staffingStatus?: string,
+    @Query('asOf') asOf?: string,
+  ) {
+    const onDate = resolveAsOf(asOf);
     const where: Prisma.ProjectWhereInput = { name: nameContains(q) };
 
     if (status) {
@@ -52,28 +63,49 @@ export class ProjectsController {
       where.status = parsed.data;
     }
 
-    return {
-      projects: await this.prisma.project.findMany({ where, orderBy: { name: 'asc' } }),
-    };
+    const wanted = staffingStatus ? requireStaffingStatus(staffingStatus) : undefined;
+    const projects = await this.prisma.project.findMany({ where, orderBy: { name: 'asc' } });
+    const staffing = await staffingViews(this.prisma, projects, onDate);
+    const byProject = new Map(staffing.map((view) => [view.projectId, view]));
+
+    const rows = projects
+      .map((project) => {
+        const view = byProject.get(project.id);
+        return {
+          id: project.id,
+          name: project.name,
+          status: project.status,
+          staffingStatus: view?.staffingStatus ?? 'NO_REQUIREMENTS_DECLARED',
+          totalShortfall: view?.totalShortfall ?? 0,
+          producesGaps: view?.producesGaps ?? false,
+        };
+      })
+      .filter((row) => wanted === undefined || row.staffingStatus === wanted);
+
+    return { asOf: onDate, projects: rows };
   }
 
   @Get(':id')
-  async read(@Param('id') id: string) {
+  async read(@Param('id') id: string, @Query('asOf') asOf?: string) {
     const projectId = requireObjectId('id', id);
+    const onDate = resolveAsOf(asOf);
     const project = await this.find(projectId);
 
-    const [requirements, assignments] = await Promise.all([
+    const [requirements, assignments, staffing] = await Promise.all([
       this.prisma.roleRequirement.findMany({ where: { projectId } }),
       this.prisma.assignment.findMany({
         where: { projectId },
         orderBy: [{ startDate: 'asc' }, { endDate: 'asc' }],
       }),
+      staffingViews(this.prisma, [project], onDate),
     ]);
 
     return {
       id: project.id,
       name: project.name,
       status: project.status,
+      asOf: onDate,
+      staffing: staffing[0],
       requirements: await requirementRows(this.prisma, requirements),
       assignments: await assignmentRows(this.prisma, assignments),
     };
@@ -195,4 +227,19 @@ export async function checkRequirements(
   ]);
 
   if (details.length > 0) throw new ValidationFailed(details);
+}
+
+function requireStaffingStatus(value: string): StaffingStatus {
+  const match = STAFFING_STATUSES.find((status) => status === value);
+  if (!match) {
+    throw new ValidationFailed([
+      {
+        field: 'staffingStatus',
+        value,
+        permitted: `one of ${STAFFING_STATUSES.join(', ')}`,
+        code: 'INVALID_ENUM_VALUE',
+      },
+    ]);
+  }
+  return match;
 }

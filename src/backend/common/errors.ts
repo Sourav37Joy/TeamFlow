@@ -18,7 +18,10 @@ export type RuleCode =
   | 'REPLACEMENT_INCOMING_ALREADY_ASSIGNED'
   | 'REPLACEMENT_DATE_OUT_OF_RANGE'
   | 'REPLACEMENT_ASSIGNMENT_ENDED'
-  | 'ROLE_ALREADY_STAFFED';
+  | 'ROLE_ALREADY_STAFFED'
+  // A project that is on hold, completed, or cancelled is not a gap to chase, so it is not a
+  // place to be suggesting or handing over people either (FR-053, D-02).
+  | 'PROJECT_NOT_STAFFABLE';
 
 export interface FieldDetail {
   field: string;

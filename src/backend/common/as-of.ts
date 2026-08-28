@@ -22,6 +22,8 @@ export function resolveAsOf(raw: unknown): CalendarDate {
   return raw;
 }
 
-export function organisationTimezone(): string {
-  return ORG_TIMEZONE;
+// "Has this already ended?" is a question about today, not about whatever date the caller is
+// browsing, so it never takes an evaluation date from the query string (FR-049).
+export function todayHere(): CalendarDate {
+  return todayIn(ORG_TIMEZONE);
 }

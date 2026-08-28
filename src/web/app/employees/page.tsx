@@ -1,23 +1,26 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import AssignmentForm from '../../components/AssignmentForm';
+import CatalogueAdd from '../../components/CatalogueAdd';
 import ConfirmDeleteDialog from '../../components/ConfirmDeleteDialog';
+import LoadLabel from '../../components/LoadLabel';
 import {
   ApiFailure,
   AssignmentRow,
   CatalogueEntry,
   createEmployee,
   deleteEmployee,
-  EmployeeDetail,
   EmployeeRow,
   failureText,
   listEmployees,
   listProjects,
   listRoles,
   listSkills,
+  LOAD_LABEL_TEXT,
+  LOAD_LABELS,
   ProjectRow,
-  readEmployee,
   removeEmployeeSkill,
   setEmployeeSkill,
   updateEmployee,
@@ -37,11 +40,13 @@ export default function EmployeesPage() {
   const [skills, setSkills] = useState<CatalogueEntry[]>([]);
   const [roles, setRoles] = useState<CatalogueEntry[]>([]);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [asOf, setAsOf] = useState('');
+  const [evaluatedOn, setEvaluatedOn] = useState('');
 
   const [q, setQ] = useState('');
   const [skillId, setSkillId] = useState('');
+  const [loadLabel, setLoadLabel] = useState('');
 
-  const [detail, setDetail] = useState<EmployeeDetail | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
   const [assigning, setAssigning] = useState<EmployeeRow | null>(null);
@@ -56,12 +61,13 @@ export default function EmployeesPage() {
 
   const load = useCallback(async () => {
     try {
-      const result = await listEmployees({ q, skillId });
+      const result = await listEmployees({ q, skillId, loadLabel, asOf: asOf || undefined });
       setEmployees(result.employees);
+      setEvaluatedOn(result.asOf);
     } catch (failure) {
       setError(failureText(failure));
     }
-  }, [q, skillId]);
+  }, [q, skillId, loadLabel, asOf]);
 
   useEffect(() => {
     if (!user) return;
@@ -78,29 +84,12 @@ export default function EmployeesPage() {
     if (user) void load();
   }, [user, load]);
 
-  async function openDetail(employee: EmployeeRow) {
-    if (detail?.id === employee.id) {
-      setDetail(null);
-      return;
-    }
-    try {
-      setDetail(await readEmployee(employee.id));
-    } catch (failure) {
-      setError(failureText(failure));
-    }
-  }
-
-  async function refreshDetail() {
-    if (detail) setDetail(await readEmployee(detail.id));
-  }
-
   async function remove(employee: EmployeeRow, confirmed: boolean) {
     setBusy(true);
     setError(null);
     try {
       await deleteEmployee(employee.id, confirmed);
       setConfirming(null);
-      if (detail?.id === employee.id) setDetail(null);
       await load();
     } catch (failure) {
       if (failure instanceof ApiFailure && failure.error.code === 'CONFIRMATION_REQUIRED') {
@@ -148,7 +137,7 @@ export default function EmployeesPage() {
             id="employee-search"
             value={q}
             onChange={(event) => setQ(event.target.value)}
-            placeholder="Priya, QA Engineer..."
+            placeholder="Amara, QA Engineer..."
           />
         </div>
         <div>
@@ -166,6 +155,30 @@ export default function EmployeesPage() {
             ))}
           </select>
         </div>
+        <div>
+          <label htmlFor="employee-load">Load</label>
+          <select
+            id="employee-load"
+            value={loadLabel}
+            onChange={(event) => setLoadLabel(event.target.value)}
+          >
+            <option value="">Any load</option>
+            {LOAD_LABELS.map((label) => (
+              <option key={label} value={label}>
+                {LOAD_LABEL_TEXT[label]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="employee-as-of">Evaluated on</label>
+          <input
+            id="employee-as-of"
+            type="date"
+            value={asOf || evaluatedOn}
+            onChange={(event) => setAsOf(event.target.value)}
+          />
+        </div>
       </div>
 
       {creating || editing ? (
@@ -180,12 +193,15 @@ export default function EmployeesPage() {
             setCreating(false);
             setEditing(null);
             await load();
-            await refreshDetail();
           }}
-          onSkillChanged={async () => {
-            await load();
-            await refreshDetail();
-          }}
+          onSkillChanged={load}
+          onSkillAdded={(entry) =>
+            setSkills((current) =>
+              current.some((skill) => skill.id === entry.id)
+                ? current
+                : [...current, entry].sort((a, b) => a.name.localeCompare(b.name)),
+            )
+          }
         />
       ) : null}
 
@@ -198,7 +214,7 @@ export default function EmployeesPage() {
           onCancel={() => setAssigning(null)}
           onSaved={async () => {
             setAssigning(null);
-            await refreshDetail();
+            await load();
           }}
         />
       ) : null}
@@ -208,7 +224,8 @@ export default function EmployeesPage() {
           <tr>
             <th>Name</th>
             <th>Role title</th>
-            <th>Capacity</th>
+            <th>Load</th>
+            <th>Spare</th>
             <th>Rated skills</th>
             <th />
           </tr>
@@ -216,7 +233,7 @@ export default function EmployeesPage() {
         <tbody>
           {employees.length === 0 ? (
             <tr>
-              <td colSpan={5} className="muted">
+              <td colSpan={6} className="muted">
                 No people match this search.
               </td>
             </tr>
@@ -224,10 +241,18 @@ export default function EmployeesPage() {
           {employees.map((employee) => (
             <tr key={employee.id}>
               <td>
-                <strong>{employee.name}</strong>
+                <Link href={`/employees/${employee.id}`}>
+                  <strong>{employee.name}</strong>
+                </Link>
               </td>
               <td>{employee.roleTitle}</td>
-              <td>{employee.totalCapacityPercent}%</td>
+              <td>
+                <LoadLabel
+                  label={employee.loadLabel}
+                  utilizationPercent={employee.utilizationPercent}
+                />
+              </td>
+              <td>{employee.remainingCapacityPercent}%</td>
               <td>
                 {employee.skills.length === 0 ? (
                   <span className="muted">None rated</span>
@@ -240,9 +265,6 @@ export default function EmployeesPage() {
                 )}
               </td>
               <td className="row-actions">
-                <button type="button" className="link" onClick={() => void openDetail(employee)}>
-                  {detail?.id === employee.id ? 'Hide' : 'Assignments'}
-                </button>
                 <button type="button" className="link" onClick={() => setAssigning(employee)}>
                   Assign
                 </button>
@@ -273,7 +295,10 @@ export default function EmployeesPage() {
         </tbody>
       </table>
 
-      {detail ? <EmployeeAssignments detail={detail} /> : null}
+      <p className="muted">
+        Load and spare capacity are evaluated on {asOf || evaluatedOn}. Open a person to see the
+        assignments behind their total.
+      </p>
 
       {confirming ? (
         <ConfirmDeleteDialog
@@ -289,51 +314,23 @@ export default function EmployeesPage() {
   );
 }
 
-// The register read from the person's side: every assignment they hold, past, present, and
-// future, with the dates that place it (FR-024, FR-035).
-function EmployeeAssignments({ detail }: { detail: EmployeeDetail }) {
-  return (
-    <div className="card panel">
-      <h3>{detail.name} - assignments</h3>
-      {detail.assignments.length === 0 ? (
-        <p className="muted">{detail.name} holds no assignments.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>Role</th>
-              <th>Allocation</th>
-              <th>Starts</th>
-              <th>Ends</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.assignments.map((assignment) => (
-              <tr key={assignment.id}>
-                <td>{assignment.projectName}</td>
-                <td>{assignment.roleName}</td>
-                <td>{assignment.allocationPercent}%</td>
-                <td>{assignment.startDate}</td>
-                <td>{assignment.endDate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
 interface FormProps {
   skills: CatalogueEntry[];
   employee: EmployeeRow | null;
   onCancel: () => void;
   onSaved: () => Promise<void>;
   onSkillChanged: () => Promise<void>;
+  onSkillAdded: (entry: CatalogueEntry) => void;
 }
 
-function EmployeeForm({ skills, employee, onCancel, onSaved, onSkillChanged }: FormProps) {
+function EmployeeForm({
+  skills,
+  employee,
+  onCancel,
+  onSaved,
+  onSkillChanged,
+  onSkillAdded,
+}: FormProps) {
   const [name, setName] = useState(employee?.name ?? '');
   const [roleTitle, setRoleTitle] = useState(employee?.roleTitle ?? '');
   const [capacity, setCapacity] = useState(String(employee?.totalCapacityPercent ?? 100));
@@ -547,6 +544,15 @@ function EmployeeForm({ skills, employee, onCancel, onSaved, onSkillChanged }: F
           </button>
         </>
       )}
+
+      <CatalogueAdd
+        kind="skill"
+        onAdded={(entry) => {
+          onSkillAdded(entry);
+          if (employee) void saveRating(entry.id, 3);
+          else setDrafts((current) => [...current, { skillId: entry.id, rating: 3 }]);
+        }}
+      />
     </div>
   );
 }

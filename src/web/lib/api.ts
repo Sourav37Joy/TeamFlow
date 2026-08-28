@@ -93,6 +93,54 @@ export const currentSession = () => api<SessionUser>('/session');
 
 export const signOut = () => send<{ signedOut: boolean }>('/session', 'DELETE');
 
+/* Shared derived vocabulary - the server owns every one of these values */
+
+export const LOAD_LABELS = [
+  'UNASSIGNED',
+  'AVAILABLE',
+  'BALANCED',
+  'HIGH_LOAD',
+  'OVERALLOCATED',
+] as const;
+
+export type LoadLabel = (typeof LOAD_LABELS)[number];
+
+export const LOAD_LABEL_TEXT: Record<LoadLabel, string> = {
+  UNASSIGNED: 'Unassigned',
+  AVAILABLE: 'Available',
+  BALANCED: 'Balanced',
+  HIGH_LOAD: 'High load',
+  OVERALLOCATED: 'Overallocated',
+};
+
+export const STAFFING_STATUSES = [
+  'FULLY_STAFFED',
+  'UNDERSTAFFED',
+  'OVERSTAFFED',
+  'NO_REQUIREMENTS_DECLARED',
+] as const;
+
+export type StaffingStatus = (typeof STAFFING_STATUSES)[number];
+
+export const STAFFING_STATUS_TEXT: Record<StaffingStatus, string> = {
+  FULLY_STAFFED: 'Fully staffed',
+  UNDERSTAFFED: 'Understaffed',
+  OVERSTAFFED: 'Overstaffed',
+  NO_REQUIREMENTS_DECLARED: 'No requirements declared',
+};
+
+export const PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as const;
+
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export const PROJECT_STATUS_TEXT: Record<ProjectStatus, string> = {
+  PLANNED: 'Planned',
+  ACTIVE: 'Active',
+  ON_HOLD: 'On hold',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
+
 /* Catalogues */
 
 export interface CatalogueEntry {
@@ -117,7 +165,13 @@ export interface RatedSkill {
   rating: number;
 }
 
-export interface EmployeeRow {
+export interface Load {
+  utilizationPercent: number;
+  remainingCapacityPercent: number;
+  loadLabel: LoadLabel;
+}
+
+export interface EmployeeRow extends Load {
   id: string;
   name: string;
   roleTitle: string;
@@ -125,8 +179,14 @@ export interface EmployeeRow {
   skills: RatedSkill[];
 }
 
+export interface HeldAssignment extends AssignmentRow {
+  standing: 'ACTIVE' | 'EXPIRED' | 'FUTURE';
+}
+
 export interface EmployeeDetail extends EmployeeRow {
-  assignments: AssignmentRow[];
+  asOf: string;
+  assignments: HeldAssignment[];
+  replacementHistory: ReplacementHistoryRow[];
 }
 
 export interface EmployeeInput {
@@ -136,10 +196,12 @@ export interface EmployeeInput {
   skills?: Array<{ skillId: string; rating: number }>;
 }
 
-export const listEmployees = (params: { q?: string; skillId?: string } = {}) =>
-  api<{ employees: EmployeeRow[] }>(`/employees${query(params)}`);
+export const listEmployees = (
+  params: { q?: string; skillId?: string; loadLabel?: string; asOf?: string } = {},
+) => api<{ asOf: string; employees: EmployeeRow[] }>(`/employees${query(params)}`);
 
-export const readEmployee = (id: string) => api<EmployeeDetail>(`/employees/${id}`);
+export const readEmployee = (id: string, asOf?: string) =>
+  api<EmployeeDetail>(`/employees/${id}${query({ asOf })}`);
 
 export const createEmployee = (body: EmployeeInput) =>
   send<EmployeeRow>('/employees', 'POST', body);
@@ -161,14 +223,13 @@ export const removeEmployeeSkill = (id: string, skillId: string) =>
 
 /* Projects */
 
-export const PROJECT_STATUSES = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as const;
-
-export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
-
 export interface ProjectRow {
   id: string;
   name: string;
   status: ProjectStatus;
+  staffingStatus: StaffingStatus;
+  totalShortfall: number;
+  producesGaps: boolean;
 }
 
 export interface RequirementRow {
@@ -181,7 +242,49 @@ export interface RequirementRow {
   headcount: number;
 }
 
-export interface ProjectDetail extends ProjectRow {
+export interface FillerRow {
+  employeeId: string;
+  employeeName: string;
+  allocationPercent: number;
+  assignmentId: string;
+}
+
+export interface RequirementStaffingRow {
+  requirementId: string;
+  roleId: string;
+  roleName: string;
+  requiredSkillId: string;
+  requiredSkillName: string;
+  requiredHeadcount: number;
+  filledHeadcount: number;
+  shortfall: number;
+  surplus: number;
+  fillers: FillerRow[];
+}
+
+export interface ProjectStaffing {
+  projectId: string;
+  projectName: string;
+  status: ProjectStatus;
+  asOf: string;
+  staffingStatus: StaffingStatus;
+  totalShortfall: number;
+  producesGaps: boolean;
+  requirements: RequirementStaffingRow[];
+  unrequestedRoles: Array<{
+    roleId: string;
+    roleName: string;
+    headcount: number;
+    fillers: FillerRow[];
+  }>;
+}
+
+export interface ProjectDetail {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  asOf: string;
+  staffing: ProjectStaffing;
   requirements: RequirementRow[];
   assignments: AssignmentRow[];
 }
@@ -192,10 +295,12 @@ export interface RequirementInput {
   headcount: number;
 }
 
-export const listProjects = (params: { q?: string; status?: string } = {}) =>
-  api<{ projects: ProjectRow[] }>(`/projects${query(params)}`);
+export const listProjects = (
+  params: { q?: string; status?: string; staffingStatus?: string; asOf?: string } = {},
+) => api<{ asOf: string; projects: ProjectRow[] }>(`/projects${query(params)}`);
 
-export const readProject = (id: string) => api<ProjectDetail>(`/projects/${id}`);
+export const readProject = (id: string, asOf?: string) =>
+  api<ProjectDetail>(`/projects/${id}${query({ asOf })}`);
 
 export const createProject = (body: {
   name: string;
@@ -256,10 +361,6 @@ export interface AssignmentWrite {
   assignment: AssignmentRow | null;
 }
 
-export const listAssignments = (
-  params: { employeeId?: string; projectId?: string; roleId?: string; asOf?: string } = {},
-) => api<{ asOf: string | null; assignments: AssignmentRow[] }>(`/assignments${query(params)}`);
-
 export const createAssignment = (body: AssignmentInput) =>
   send<AssignmentWrite>('/assignments', 'POST', body);
 
@@ -272,3 +373,172 @@ export const updateAssignment = (
 
 export const deleteAssignment = (id: string) =>
   send<{ deleted: boolean }>(`/assignments/${id}`, 'DELETE');
+
+/* Replacement */
+
+export interface ReplacementHistoryRow {
+  id: string;
+  effectiveDate: string;
+  outgoingEmployeeId: string;
+  outgoingEmployeeName: string;
+  incomingEmployeeId: string | null;
+  incomingEmployeeName: string | null;
+  projectName: string | null;
+  roleName: string | null;
+  performedByUserId: string;
+  performedByName: string;
+  performedAt: string;
+  outgoingAssignmentId: string | null;
+  incomingAssignmentId: string | null;
+}
+
+export interface ReplacementInput {
+  incomingEmployeeId: string;
+  effectiveDate: string;
+  allocationPercent?: number;
+  endDate?: string;
+  acknowledgeWarnings?: boolean;
+}
+
+export interface ReplacementResult {
+  warnings: Warning[];
+  effectiveDate: string;
+  outgoingEmployeeName: string;
+  incomingEmployeeName: string;
+  outgoingRemoved: boolean;
+  outgoingEndsOn: string | null;
+  incoming: AssignmentRow | null;
+  outgoing: AssignmentRow | null;
+}
+
+export const replaceOnAssignment = (id: string, body: ReplacementInput, dryRun = false) =>
+  send<ReplacementResult>(
+    `/assignments/${id}/replacement${dryRun ? '?dryRun=true' : ''}`,
+    'POST',
+    body,
+  );
+
+/* Candidates */
+
+export interface Candidate {
+  employeeId: string;
+  name: string;
+  skillRating: number;
+  skillComponent: number;
+  capacityComponent: number;
+  overallScore: number;
+}
+
+export interface Shortlist {
+  asOf: string;
+  requiredSkillId: string | null;
+  requiredSkillName: string | null;
+  candidates: Candidate[];
+  reason: string | null;
+  message: string | null;
+}
+
+export interface RequirementShortlist extends Shortlist {
+  projectId: string;
+  requirementId: string;
+  shortfall: number;
+}
+
+export interface ReplacementShortlist extends Shortlist {
+  assignmentId: string;
+  outgoingEmployeeId?: string;
+}
+
+export const requirementCandidates = (projectId: string, requirementId: string, asOf?: string) =>
+  api<RequirementShortlist>(
+    `/projects/${projectId}/requirements/${requirementId}/candidates${query({ asOf })}`,
+  );
+
+export const replacementCandidates = (assignmentId: string, asOf?: string) =>
+  api<ReplacementShortlist>(
+    `/assignments/${assignmentId}/replacement-candidates${query({ asOf })}`,
+  );
+
+/* Derived reads */
+
+export interface PersonGroup {
+  kind: 'person';
+  id: string;
+  name: string;
+  roleTitle: string;
+  totalCommittedPercent: number;
+  remainingCapacityPercent: number;
+  loadLabel: LoadLabel;
+  rows: AssignmentRow[];
+}
+
+export interface ProjectGroup {
+  kind: 'project';
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  assignedHeadcount: number;
+  rows: AssignmentRow[];
+}
+
+export interface AllocationOverview {
+  asOf: string;
+  groupBy: 'person' | 'project';
+  rowCount: number;
+  groups: Array<PersonGroup | ProjectGroup>;
+  reason: string | null;
+}
+
+export const allocationOverview = (
+  params: {
+    groupBy?: string;
+    q?: string;
+    skillId?: string;
+    roleId?: string;
+    asOf?: string;
+  } = {},
+) => api<AllocationOverview>(`/allocation-overview${query(params)}`);
+
+export interface OverallocatedEntry {
+  employeeId: string;
+  name: string;
+  roleTitle: string;
+  utilizationPercent: number;
+  totalCapacityPercent: number;
+  overBy: number;
+  loadLabel: LoadLabel;
+}
+
+export interface AvailableEntry {
+  employeeId: string;
+  name: string;
+  roleTitle: string;
+  remainingCapacityPercent: number;
+  utilizationPercent: number;
+  loadLabel: LoadLabel;
+}
+
+export interface GapEntry {
+  projectId: string;
+  projectName: string;
+  status: ProjectStatus;
+  staffingStatus: StaffingStatus;
+  totalShortfall: number;
+  shortRoles: Array<{
+    requirementId: string;
+    roleId: string;
+    roleName: string;
+    requiredHeadcount: number;
+    filledHeadcount: number;
+    shortfall: number;
+  }>;
+}
+
+export interface Dashboard {
+  asOf: string;
+  overallocated: { entries: OverallocatedEntry[]; reason: string | null };
+  available: { entries: AvailableEntry[]; reason: string | null };
+  gaps: { entries: GapEntry[]; reason: string | null };
+}
+
+export const readDashboard = (asOf?: string) => api<Dashboard>(`/dashboard${query({ asOf })}`);
